@@ -2,729 +2,796 @@
 	/**
 	 * The file contains the class to register a plugin in the Factory.
 	 *
-	 * @author Paul Kashtanoff <paul@byonepress.com>
-	 * @copyright (c) 2013, OnePress Ltd
+	 * @author Alex Kovalev <alex.kovalevv@gmail.com>
+	 * @copyright (c) 2018, Webcraftic Ltd
 	 *
 	 * @package factory-core
 	 * @since 1.0.0
 	 */
 
-	if( !class_exists('Factory_Plugins') ) {
-
-		/**
-		 * A collection of created plugins.
-		 *
-		 * This class has the same name across all possible Factorries.
-		 *
-		 * @since 1.0.0
-		 */
-		class Factory_Plugins {
-
-			protected static $plugins = array();
-
-			/**
-			 * Registers a plugin
-			 *
-			 * @since 1.0.0
-			 */
-			public static function register($plugin)
-			{
-				self::$plugins[$plugin->pluginName] = $plugin;
-			}
-
-			/**
-			 * Get a plugin by its name.
-			 *
-			 * @since 1.0.0
-			 */
-			public static function get($pluginName)
-			{
-				if( isset(self::$plugins[$pluginName]) ) {
-					return self::$plugins[$pluginName];
-				}
-
-				return null;
-			}
-		}
+	// Exit if accessed directly
+	if( !defined('ABSPATH') ) {
+		exit;
 	}
-
-	/**
-	 * Factory Plugin
-	 *
-	 * @since 1.0.0
-	 */
-	class Factory000_Plugin {
-
-		/**
-		 * Is a current page one of the admin pages?
-		 *
-		 * @since 1.0.0
-		 * @var bool
-		 */
-		public $isAdmin;
-
-		/**
-		 * A class name of an activator to activate the plugin.
-		 *
-		 * @var string
-		 */
-		protected $activatorClass = array();
-
-		/**
-		 * Creates an instance of Factory plugin.
-		 *
-		 * @param $pluginPath A full path to the main plugin file.
-		 * @param $data A set of plugin data.
-		 * @since 1.0.0
-		 */
-		public function __construct($pluginPath, $data)
-		{
-			$this->options = $data;
-
-			// saves plugin basic paramaters
-			$this->mainFile = $pluginPath;
-			$this->pluginRoot = dirname($pluginPath);
-			$this->relativePath = plugin_basename($pluginPath);
-			$this->pluginUrl = plugins_url(null, $pluginPath);
-
-			// child plugins, these plugins depend on activation/deactivation of the core plugin
-			$this->childPlugins = isset($data['childPlugins'])
-				? $data['childPlugins']
-				: array();
-
-			// some extra params
-			$this->pluginName = isset($data['name'])
-				? $data['name']
-				: null;
-			$this->pluginTitle = isset($data['title'])
-				? $data['title']
-				: null;
-			$this->version = isset($data['version'])
-				? $data['version']
-				: null;
-			$this->build = isset($data['assembly'])
-				? $data['assembly']
-				: null;
-			$this->tracker = isset ($data['tracker'])
-				? $data['tracker']
-				: null;
-			$this->host = isset($_SERVER['HTTP_HOST'])
-				? $_SERVER['HTTP_HOST']
-				: null;
-
-			// used only in the module 'updates'
-			$this->pluginSlug = !empty($this->pluginName)
-				? $this->pluginName
-				: basename($pluginPath);
-
-			// just caching this varibale
-			$this->isAdmin = is_admin();
-
-			// registers the plugin in the global collection
-			Factory_Plugins::register($this);
-
-			// init actions
-			$this->setupActions();
-
-			// register activation hooks
-			if( is_admin() ) {
-				register_activation_hook($this->mainFile, array($this, 'forceActivationHook'));
-				register_deactivation_hook($this->mainFile, array($this, 'deactivationHook'));
-			}
-		}
-
-		/**
-		 * Loads modules required for a plugin.
-		 *
-		 * @since 3.2.0
-		 * @param mixed[] $modules
-		 * @return void
-		 */
-		public function load($modules = array())
-		{
-			foreach($modules as $module) {
-				$this->loadModule($module);
-			}
-
-			do_action('factory_core_modules_loaded-' . $this->pluginName);
-		}
-
-		/**
-		 * Loads add-ons for the plugin.
-		 */
-		public function loadAddons($addons)
-		{
-			if( empty($addons) ) {
-				return;
-			}
-
-			foreach($addons as $addonName => $addonPath) {
-				$constName = strtoupper('LOADING_' . $addonName . '_AS_ADDON');
-				if( !defined($constName) ) {
-					define($constName, true);
-				}
-				require_once($addonPath);
-			}
-		}
-
-		/**
-		 * Loads a specified module.
-		 *
-		 * @since 3.2.0
-		 * @param string $modulePath
-		 * @param string $moduleVersion
-		 * @return void
-		 */
-		public function loadModule($module)
-		{
-			$scope = isset($module[2])
-				? $module[2]
-				: 'all';
-
-			if( $scope == 'all' || (is_admin() && $scope == 'admin') || (!is_admin() && $scope == 'public') ) {
-
-				require $this->pluginRoot . '/' . $module[0] . '/boot.php';
-				do_action($module[1] . '_plugin_created', $this);
-			}
-		}
-
-		/**
-		 * Registers a class to activate the plugin.
-		 *
-		 * @since 1.0.0
-		 * @param string A class name of the plugin activator.
-		 * @return void
-		 */
-		public function registerActivation($className)
-		{
-			$this->activatorClass[] = $className;
-		}
-
-		/**
-		 * Setups actions related with the Factory Plugin.
-		 *
-		 * @since 1.0.0
-		 */
-		private function setupActions()
-		{
-			add_action('init', array($this, 'checkPluginVersioninDatabase'));
-
-			if( $this->isAdmin ) {
-				add_action('admin_init', array($this, 'customizePluginRow'), 20);
-				add_action('factory_core_modules_loaded-' . $this->pluginName, array($this, 'modulesLoaded'));
-			}
-		}
-
-		/**
-		 * Checks the plugin version in database. If it's not the same as the currernt,
-		 * it means that the plugin was updated and we need to execute the update hook.
-		 *
-		 * Calls on the hook "plugins_loaded".
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function checkPluginVersioninDatabase()
-		{
-
-			// checks whether the plugin needs to run updates.
-			if( $this->isAdmin ) {
-				$version = $this->getPluginVersionFromDatabase();
-
-				if( $version != $this->build . '-' . $this->version ) {
-					$this->activationOrUpdateHook(false);
-				}
-			}
-		}
-
-		/**
-		 * Returns the plugin version from database.
-		 *
-		 * @since 1.0.0
-		 * @return string|null The plugin version registered in the database.
-		 */
-		public function getPluginVersionFromDatabase()
-		{
-			$versions = get_option('factory_plugin_versions', array());
-			$version = isset ($versions[$this->pluginName])
-				? $versions[$this->pluginName]
-				: null;
-
-			// for combability with previous versions
-			// @todo: remove after several updates
-			if( !$version ) {
-				return get_option('fy_plugin_version_' . $this->pluginName, null);
-			}
-
-			return $version;
-		}
-
-		/**
-		 * Registers in the database a new version of the plugin.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function updatePluginVersionInDatabase()
-		{
-			$versions = get_option('factory_plugin_versions', array());
-			$versions[$this->pluginName] = $this->build . '-' . $this->version;
-			update_option('factory_plugin_versions', $versions);
-		}
-
-		/**
-		 * Customize the plugin row (on the page plugins.php).
-		 *
-		 * Calls on the hook "admin_init".
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function customizePluginRow()
-		{
-			remove_action("after_plugin_row_" . $this->relativePath, 'wp_plugin_update_row');
-			add_action("after_plugin_row_" . $this->relativePath, array($this, 'showCustomPluginRow'), 10, 2);
-		}
-
-		public function activate()
-		{
-			$this->forceActivationHook();
-		}
-
-		public function deactivate()
-		{
-			$this->deactivationHook();
-		}
-
-		/**
-		 * Executes an activation hook for this plugin immediately.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function forceActivationHook()
-		{
-			$this->activationOrUpdateHook(true);
-
-			// activates the child plugins
-			if( !empty($this->childPlugins) ) {
-				foreach($this->childPlugins as $childPluginName) {
-
-					$childPlugin = Factory_Plugins::get($childPluginName);
-					if( empty($childPlugin) ) {
-						die('The child plugin "' . $childPluginName . '" not found.');
-					}
-
-					$childPlugin->forceActivationHook();
-				}
-			}
-		}
-
-		/**
-		 * Executes an activation hook or an update hook.
-		 *
-		 * @param bool $forceActivation If true, then executes an activation hook.
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function activationOrUpdateHook($forceActivation = false)
-		{
-
-			$dbVersion = $this->getPluginVersionFromDatabase();
-			do_action('factory_plugin_activation_or_update_' . $this->pluginName, $forceActivation, $dbVersion, $this);
-
-			// there are not any previous version of the plugin in the past
-			if( !$dbVersion ) {
-				$this->activationHook();
-
-				$this->updatePluginVersionInDatabase();
-
-				return;
-			}
-
-			$parts = explode('-', $dbVersion);
-			$prevousBuild = $parts[0];
-			$prevousVersion = $parts[1];
-
-			// if another build was used previously
-			if( $prevousBuild != $this->build ) {
-				$this->migrationHook($prevousBuild, $this->build);
-				$this->activationHook();
-
-				$this->updatePluginVersionInDatabase();
-
-				return;
-			}
-
-			// if another less version was used previously
-			if( version_compare($prevousVersion, $this->version, '<') ) {
-				$this->updateHook($prevousVersion, $this->version);
-			}
-
-			// standart plugin activation
-			if( $forceActivation ) {
-				$this->activationHook();
-			}
-
-			// else nothing to do
-			$this->updatePluginVersionInDatabase();
-
-			return;
-		}
-
-		/**
-		 * It's invoked on plugin activation. Don't excite it directly.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function activationHook()
-		{
-
-			$cancelled = apply_filters('factory_cancel_plugin_activation_' . $this->pluginName, false);
-			if( $cancelled ) {
-				return;
-			}
-
-			if( !empty($this->activatorClass) ) {
-				foreach($this->activatorClass as $activatorClass) {
-					$activator = new $activatorClass($this);
-					$activator->activate();
-				}
-			}
-
-			do_action('factory_000_plugin_activation', $this);
-			do_action('factory_plugin_activation_' . $this->pluginName, $this);
-
-			// just time to know when the plugin was activated the first time
-			$activated = get_option('factory_plugin_activated_' . $this->pluginName, 0);
-			if( !$activated ) {
-				update_option('factory_plugin_activated_' . $this->pluginName, time());
-			}
-		}
-
-		/**
-		 * It's invoked on plugin deactionvation. Don't excite it directly.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function deactivationHook()
-		{
-
-			$cancelled = apply_filters('factory_cancel_plugin_deactivation_' . $this->pluginName, false);
-			if( $cancelled ) {
-				return;
-			}
-
-			do_action('factory_000_plugin_deactivation', $this);
-			do_action('factory_plugin_deactivation_' . $this->pluginName, $this);
-
-			if( !empty($this->activatorClass) ) {
-				foreach($this->activatorClass as $activatorClass) {
-					$activator = new $activatorClass($this);
-					$activator->deactivate();
-				}
-			}
-
-			// deactivates the child plugins
-			if( !empty($this->childPlugins) ) {
-				foreach($this->childPlugins as $childPluginName) {
-
-					$childPlugin = Factory_Plugins::get($childPluginName);
-					if( empty($childPlugin) ) {
-						die('The child plugin "' . $childPluginName . '" not found.');
-					}
-
-					$childPlugin->deactivationHook();
-				}
-			}
-		}
-
-		/**
-		 * Finds migration items and install ones.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function migrationHook($previosBuild, $currentBuild)
-		{
-
-			$migrationFile = $this->options['updates'] . $previosBuild . '-' . $currentBuild . '.php';
-			if( !file_exists($migrationFile) ) {
-				return;
-			}
-
-			$classes = $this->getClasses($migrationFile);
-			if( count($classes) == 0 ) {
-				return;
-			}
-
-			include_once($migrationFile);
-			$migrationClass = $classes[0]['name'];
-
-			$migrationItem = new $migrationClass($this->plugin);
-			$migrationItem->install();
-		}
-
-		/**
-		 * Finds upate items and install the ones.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function updateHook($old, $new)
-		{
-
-			// converts versions like 0.0.0 to 000000
-			$oldNumber = $this->getVersionNumber($old);
-			$newNumber = $this->getVersionNumber($new);
-
-			$updateFiles = $this->options['updates'];
-			$files = $this->findFiles($updateFiles);
-
-			if( empty($files) ) {
-				return;
-			}
-
-			// finds updates that has intermediate version
-			foreach($files as $item) {
-				if( !preg_match('/^\d+$/', $item['name']) ) {
-					continue;
-				}
-
-				$itemNumber = intval($item['name']);
-				if( $itemNumber > $oldNumber && $itemNumber <= $newNumber ) {
-
-					$classes = $this->getClasses($item['path']);
-					if( count($classes) == 0 ) {
-						return;
-					}
-
-					foreach($classes as $path => $classData) {
-						include_once($path);
-						$updateClass = $classData['name'];
-
-						$update = new $updateClass($this);
-						$update->install();
+	
+	if( !class_exists('Wbcr_Factory000_Plugin') ) {
+		
+		class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
+
+			/**
+			 * @var string
+			 */
+			protected $plugin_title;
+
+			/**
+			 * @var string
+			 */
+			protected $plugin_name;
+
+			/**
+			 * @var string
+			 */
+			protected $plugin_version;
+
+			/**
+			 * @var string
+			 */
+			protected $plugin_build;
+
+			/**
+			 * @var string
+			 */
+			protected $plugin_assembly;
+
+			/**
+			 * @var string
+			 */
+			protected $main_file;
+
+			/**
+			 * @var string
+			 */
+			protected $plugin_root;
+
+			/**
+			 * @var string
+			 */
+			protected $relative_path;
+
+			/**
+			 * @var string
+			 */
+			protected $plugin_url;
+
+			/**
+			 * @var string
+			 */
+			protected $updates;
+			
+			/**
+			 * Is a current page one of the admin pages?
+			 *
+			 * @since 1.0.0
+			 * @var bool
+			 */
+			public $is_admin;
+			
+			/**
+			 * A class name of an activator to activate the plugin.
+			 *
+			 * @var string
+			 */
+			protected $activator_class = array();
+
+			/**
+			 * The Bootstrap Manager class.n.
+			 *
+			 * @var Wbcr_FactoryBootstrap000_Manager
+			 */
+			public $bootstap;
+
+			/**
+			 * The Bootstrap Manager class.n.
+			 *
+			 * @var Wbcr_FactoryForms000_Manager
+			 */
+			public $forms;
+			
+			/**
+			 * Creates an instance of Factory plugin.
+			 *
+			 * @param string $plugin_path A full path to the main plugin file.
+			 * @param array $data A set of plugin data.
+			 * @since 1.0.0
+			 * @throws Exception
+			 */
+			public function __construct($plugin_path, $data)
+			{
+				parent::__construct($plugin_path, $data);
+				
+				foreach((array)$data as $option_name => $option_value) {
+					if( !isset($this->$option_name) ) {
+						$this->$option_name = $option_value;
 					}
 				}
-			}
 
-			// just time to know when the plugin was activated the first time
-			$activated = get_option('factory_plugin_activated_' . $this->pluginName, 0);
-			if( !$activated ) {
-				update_option('factory_plugin_activated_' . $this->pluginName, time());
-			}
-		}
-
-		/**
-		 * Converts string representation of the version to the numeric.
-		 *
-		 * @since 1.0.0
-		 * @param string $version A string version to convert.
-		 * @return integer
-		 */
-		protected function getVersionNumber($version)
-		{
-
-			preg_match('/(\d+)\.(\d+)\.(\d+)/', $version, $matches);
-			if( count($matches) == 0 ) {
-				return false;
-			}
-
-			$number = '';
-			$number .= (strlen($matches[1]) == 1)
-				? '0' . $matches[1]
-				: $matches[1];
-			$number .= (strlen($matches[2]) == 1)
-				? '0' . $matches[2]
-				: $matches[2];
-			$number .= (strlen($matches[3]) == 1)
-				? '0' . $matches[3]
-				: $matches[3];
-
-			return intval($number);
-		}
-
-		/**
-		 * Forces modules.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function modulesLoaded()
-		{
-			// factory_core_000_modules_loaded( $this );
-		}
-
-		/**
-		 * Shows admin notices for a given plugin.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function showAdminNotices()
-		{
-			factory_core_000_show_admin_notices($this);
-		}
-
-		/**
-		 * Hook action.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function hook()
-		{
-			factory_core_000_hook($this);
-		}
-
-		// ----------------------------------------------------------------------
-		// Plugin row on plugins.php page
-		// ----------------------------------------------------------------------
-
-		public function showCustomPluginRow($file, $plugin_data)
-		{
-			if( !is_network_admin() && is_multisite() ) {
-				return;
-			}
-
-			$messages = apply_filters('factory_plugin_row_' . $this->pluginName, array(), $file, $plugin_data);
-
-			// if nothign to show then, use default handle
-			/*if( count($messages) == 0 ) {
-				wp_plugin_update_row($file, $plugin_data);
-
-				return;
-			}*/
-
-			if( empty($messages) ) {
-				return;
-			}
-
-			$wp_list_table = _get_list_table('WP_Plugins_List_Table');
-
-			foreach($messages as $message) {
-				echo '<tr class="plugin-update-tr active">';
-				echo '<td colspan="' . $wp_list_table->get_column_count() . '" class="plugin-update colspanchange">';
-				echo '<div class="update-message notice inline notice-error notice-alt">';
-				echo '<p>' . $message . '</p>';
-				echo '</div>';
-				echo '</td></tr>';
-			}
-		}
-
-		// ----------------------------------------------------------------------
-		// Finding files
-		// ----------------------------------------------------------------------
-
-		/**
-		 * Returns a list of files at a given path.
-		 * @param string $path path for search
-		 */
-		private function findFiles($path)
-		{
-			return $this->findFileOrFolders($path, true);
-		}
-
-		/**
-		 * Returns a list of folders at a given path.
-		 * @param string $path path for search
-		 */
-		private function findFolders($path)
-		{
-			return $this->findFileOrFolders($path, false);
-		}
-
-		/**
-		 * Returns a list of files or folders at a given path.
-		 * @param string $path path for search
-		 * @param bool $files files or folders?
-		 */
-		private function findFileOrFolders($path, $areFiles = true)
-		{
-			if( !is_dir($path) ) {
-				return array();
-			}
-
-			$entries = scandir($path);
-			if( empty($entries) ) {
-				return array();
-			}
-
-			$files = array();
-			foreach($entries as $entryName) {
-				if( $entryName == '.' || $entryName == '..' ) {
-					continue;
+				$this->is_admin = is_admin();
+				
+				if( empty($this->prefix) || empty($this->plugin_title) || empty($this->plugin_version) || empty($this->plugin_assembly) ) {
+					throw new Exception('Не передан один из обязательных атрибутов (prefix,plugin_title,plugin_name,plugin_version,plugin_build,plugin_assembly).');
 				}
-
-				$filename = $path . '/' . $entryName;
-				if( ($areFiles && is_file($filename)) || (!$areFiles && is_dir($filename)) ) {
-					$files[] = array(
-						'path' => str_replace("\\", "/", $filename),
-						'name' => $areFiles
-							? str_replace('.php', '', $entryName)
-							: $entryName
-					);
-				}
-			}
-
-			return $files;
-		}
-
-		/**
-		 * Gets php classes defined in a specified file.
-		 * @param type $path
-		 */
-		private function getClasses($path)
-		{
-
-			$phpCode = file_get_contents($path);
-
-			$classes = array();
-			$tokens = token_get_all($phpCode);
-
-			$count = count($tokens);
-			for($i = 2; $i < $count; $i++) {
-				if( is_array($tokens) && $tokens[$i - 2][0] == T_CLASS && $tokens[$i - 1][0] == T_WHITESPACE && $tokens[$i][0] == T_STRING ) {
-
-					$extends = null;
-					if( $tokens[$i + 2][0] == T_EXTENDS && $tokens[$i + 4][0] == T_STRING ) {
-						$extends = $tokens[$i + 4][1];
-					}
-
-					$class_name = $tokens[$i][1];
-					$classes[$path] = array(
-						'name' => $class_name,
-						'extends' => $extends
-					);
+				
+				// saves plugin basic paramaters
+				$this->main_file = $plugin_path;
+				$this->plugin_root = dirname($plugin_path);
+				$this->relative_path = plugin_basename($plugin_path);
+				$this->plugin_url = plugins_url(null, $plugin_path);
+				
+				// used only in the module 'updates'
+				$this->plugin_slug = !empty($this->plugin_name)
+					? $this->plugin_name
+					: basename($plugin_path);
+				
+				// init actions
+				$this->setupActions();
+				
+				// register activation hooks
+				if( is_admin() ) {
+					register_activation_hook($this->main_file, array($this, 'forceActivationHook'));
+					register_deactivation_hook($this->main_file, array($this, 'deactivationHook'));
 				}
 			}
 
 			/**
-			 * result example:
-			 *
-			 * $classes['/plugin/items/filename.php'] = array(
-			 *      'name'      => 'PluginNameItem',
-			 *      'extendes'  => 'PluginNameItemBase'
-			 * )
+			 * @return string
 			 */
+			public function getPluginTitle()
+			{
+				return $this->plugin_title;
+			}
 
-			return $classes;
-		}
+			/**
+			 * @return string
+			 */
+			public function getPrefix()
+			{
+				return $this->prefix;
+			}
 
-		// ----------------------------------------------------------------------
-		// Public methods
-		// ----------------------------------------------------------------------
+			/**
+			 * @return string
+			 */
+			public function getPluginName()
+			{
+				return $this->plugin_name;
+			}
 
-		public function newScriptList()
-		{
-			return new Factory000_ScriptList($this);
-		}
+			/**
+			 * @return string
+			 */
+			public function getPluginVersion()
+			{
+				return $this->plugin_version;
+			}
 
-		public function newStyleList()
-		{
-			return new Factory000_StyleList($this);
+			/**
+			 * @return string
+			 */
+			public function getPluginBuild()
+			{
+				return $this->plugin_build;
+			}
+
+			/**
+			 * @return string
+			 */
+			public function getPluginAssembly()
+			{
+				return $this->plugin_assembly;
+			}
+
+			/**
+			 * @param Wbcr_FactoryBootstrap000_Manager $bootstap
+			 */
+			public function setBootstap(Wbcr_FactoryBootstrap000_Manager $bootstap)
+			{
+				$this->bootstap = $bootstap;
+			}
+
+			/**
+			 * @param Wbcr_FactoryForms000_Manager $forms
+			 */
+			public function setForms(Wbcr_FactoryForms000_Manager $forms)
+			{
+				$this->forms = $forms;
+			}
+
+			/**
+			 * @return stdClass
+			 */
+			public function getPluginPathInfo()
+			{
+
+				$object = new stdClass;
+
+				$object->main_file = $this->main_file;
+				$object->plugin_root = $this->plugin_root;
+				$object->relative_path = $this->relative_path;
+				$object->plugin_url = $this->plugin_url;
+
+				return $object;
+			}
+
+			/**
+			 * Loads modules required for a plugin.
+			 *
+			 * @since 3.2.0
+			 * @param mixed[] $modules
+			 * @return void
+			 */
+			public function load($modules = array())
+			{
+				foreach($modules as $module) {
+					$this->loadModule($module);
+				}
+				
+				do_action('wbcr_factory_000_core_modules_loaded-' . $this->plugin_name);
+			}
+
+			/**
+			 * Loads add-ons for the plugin.
+			 */
+			public function loadAddons($addons)
+			{
+				if( empty($addons) ) {
+					return;
+				}
+				
+				foreach($addons as $addonName => $addonPath) {
+					$constName = strtoupper('LOADING_' . $addonName . '_AS_ADDON');
+					if( !defined($constName) ) {
+						define($constName, true);
+					}
+					require_once($addonPath);
+				}
+			}
+			
+			/**
+			 * Loads a specified module.
+			 *
+			 * @since 3.2.0
+			 * @param string $modulePath
+			 * @param string $moduleVersion
+			 * @return void
+			 */
+			public function loadModule($module)
+			{
+				$scope = isset($module[2])
+					? $module[2]
+					: 'all';
+				
+				if( $scope == 'all' || (is_admin() && $scope == 'admin') || (!is_admin() && $scope == 'public') ) {
+					
+					require $this->plugin_root . '/' . $module[0] . '/boot.php';
+					do_action('wbcr_' . $module[1] . '_000_plugin_created', $this);
+				}
+			}
+			
+			/**
+			 * Registers a class to activate the plugin.
+			 *
+			 * @since 1.0.0
+			 * @param string A class name of the plugin activator.
+			 * @return void
+			 */
+			public function registerActivation($className)
+			{
+				$this->activator_class[] = $className;
+			}
+			
+			/**
+			 * Setups actions related with the Factory Plugin.
+			 *
+			 * @since 1.0.0
+			 */
+			private function setupActions()
+			{
+				add_action('init', array($this, 'checkPluginVersioninDatabase'));
+				
+				if( $this->is_admin ) {
+					add_action('admin_init', array($this, 'customizePluginRow'), 20);
+					add_action('wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, array(
+						$this,
+						'modulesLoaded'
+					));
+				}
+			}
+			
+			/**
+			 * Checks the plugin version in database. If it's not the same as the currernt,
+			 * it means that the plugin was updated and we need to execute the update hook.
+			 *
+			 * Calls on the hook "plugins_loaded".
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function checkPluginVersioninDatabase()
+			{
+				
+				// checks whether the plugin needs to run updates.
+				if( $this->is_admin ) {
+					$plugin_version = $this->getPluginVersionFromDatabase();
+					
+					if( $plugin_version != $this->plugin_build . '-' . $this->plugin_version ) {
+						$this->activationOrUpdateHook(false);
+					}
+				}
+			}
+			
+			/**
+			 * Returns the plugin version from database.
+			 *
+			 * @since 1.0.0
+			 * @return string|null The plugin version registered in the database.
+			 */
+			public function getPluginVersionFromDatabase()
+			{
+				$plugin_versions = $this->getOption('factory_000_plugin_versions', array());
+				$plugin_version = isset ($plugin_versions[$this->plugin_name])
+					? $plugin_versions[$this->plugin_name]
+					: null;
+				
+				// for combability with previous versions
+				// @todo: remove after several updates
+				if( !$plugin_version ) {
+					return $this->getOption('fy_plugin_version_' . $this->plugin_name, null);
+				}
+				
+				return $plugin_version;
+			}
+			
+			/**
+			 * Registers in the database a new version of the plugin.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function updatePluginVersionInDatabase()
+			{
+				$plugin_versions = $this->getOption('factory_000_plugin_versions', array());
+				$plugin_versions[$this->plugin_name] = $this->plugin_build . '-' . $this->plugin_version;
+				$this->updateOption('factory_000_plugin_versions', $plugin_versions);
+			}
+			
+			/**
+			 * Customize the plugin row (on the page plugins.php).
+			 *
+			 * Calls on the hook "admin_init".
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function customizePluginRow()
+			{
+				remove_action("after_plugin_row_" . $this->relative_path, 'wp_plugin_update_row');
+				add_action("after_plugin_row_" . $this->relative_path, array($this, 'showCustomPluginRow'), 10, 2);
+			}
+			
+			public function activate()
+			{
+				$this->forceActivationHook();
+			}
+			
+			public function deactivate()
+			{
+				$this->deactivationHook();
+			}
+			
+			/**
+			 * Executes an activation hook for this plugin immediately.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function forceActivationHook()
+			{
+				$this->activationOrUpdateHook(true);
+			}
+			
+			/**
+			 * Executes an activation hook or an update hook.
+			 *
+			 * @param bool $forceActivation If true, then executes an activation hook.
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function activationOrUpdateHook($force_activation = false)
+			{
+				
+				$db_version = $this->getPluginVersionFromDatabase();
+				do_action('wbcr_factory_000_plugin_activation_or_update_' . $this->plugin_name, $force_activation, $db_version, $this);
+				
+				// there are not any previous version of the plugin in the past
+				if( !$db_version ) {
+					$this->activationHook();
+					
+					$this->updatePluginVersionInDatabase();
+					
+					return;
+				}
+				
+				$parts = explode('-', $db_version);
+				$prevous_build = $parts[0];
+				$prevous_version = $parts[1];
+				
+				// if another build was used previously
+				if( $prevous_build != $this->plugin_build ) {
+					$this->migrationHook($prevous_build, $this->plugin_build);
+					$this->activationHook();
+					
+					$this->updatePluginVersionInDatabase();
+					
+					return;
+				}
+				
+				// if another less version was used previously
+				if( version_compare($prevous_version, $this->plugin_version, '<') ) {
+					$this->updateHook($prevous_version, $this->plugin_version);
+				}
+				
+				// standart plugin activation
+				if( $force_activation ) {
+					$this->activationHook();
+				}
+				
+				// else nothing to do
+				$this->updatePluginVersionInDatabase();
+				
+				return;
+			}
+			
+			/**
+			 * It's invoked on plugin activation. Don't excite it directly.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function activationHook()
+			{
+				$cancelled = apply_filters('wbcr_factory_000_cancel_plugin_activation_' . $this->plugin_name, false);
+
+				if( $cancelled ) {
+					return;
+				}
+				
+				if( !empty($this->activator_class) ) {
+					foreach((array)$this->activator_class as $activator_class) {
+						$activator = new $activator_class($this);
+						$activator->activate();
+					}
+				}
+				
+				do_action('wbcr_factory_000_plugin_activation', $this);
+				do_action('wbcr_factory_000_plugin_activation_' . $this->plugin_name, $this);
+				
+				// just time to know when the plugin was activated the first time
+				$activated = $this->getOption('factory_000_plugin_activated_' . $this->plugin_name, 0);
+				
+				if( !$activated ) {
+					$this->updateOption('factory_000_plugin_activated_' . $this->plugin_name, time());
+				}
+			}
+			
+			/**
+			 * It's invoked on plugin deactionvation. Don't excite it directly.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function deactivationHook()
+			{
+				$cancelled = apply_filters('wbcr_factory_000_cancel_plugin_deactivation_' . $this->plugin_name, false);
+				
+				if( $cancelled ) {
+					return;
+				}
+				
+				do_action('wbcr_factory_000_plugin_deactivation', $this);
+				do_action('wbcr_factory_000_plugin_deactivation_' . $this->plugin_name, $this);
+				
+				if( !empty($this->activator_class) ) {
+					foreach((array)$this->activator_class as $activator_class) {
+						$activator = new $activator_class($this);
+						$activator->deactivate();
+					}
+				}
+			}
+			
+			/**
+			 * Finds migration items and install ones.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function migrationHook($previos_build, $current_build)
+			{
+				$migration_file = $this->updates . $previos_build . '-' . $current_build . '.php';
+				if( !file_exists($migration_file) ) {
+					return;
+				}
+				
+				$classes = $this->getClasses($migration_file);
+				if( count($classes) == 0 ) {
+					return;
+				}
+				
+				include_once($migration_file);
+				$migrationClass = $classes[0]['name'];
+				
+				$migrationItem = new $migrationClass($this);
+				$migrationItem->install();
+			}
+			
+			/**
+			 * Finds upate items and install the ones.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function updateHook($old, $new)
+			{
+				
+				// converts versions like 0.0.0 to 000000
+				$old_number = $this->getVersionNumber($old);
+				$new_number = $this->getVersionNumber($new);
+				
+				$update_files = $this->updates;
+				$files = $this->findFiles($update_files);
+				
+				if( empty($files) ) {
+					return;
+				}
+				
+				// finds updates that has intermediate version
+				foreach($files as $item) {
+					if( !preg_match('/^\d+$/', $item['name']) ) {
+						continue;
+					}
+					
+					$item_number = intval($item['name']);
+					if( $item_number > $old_number && $item_number <= $new_number ) {
+						
+						$classes = $this->getClasses($item['path']);
+						if( count($classes) == 0 ) {
+							return;
+						}
+						
+						foreach($classes as $path => $class_data) {
+							include_once($path);
+							$update_class = $class_data['name'];
+							
+							$update = new $update_class($this);
+							$update->install();
+						}
+					}
+				}
+				
+				// just time to know when the plugin was activated the first time
+				$activated = $this->getOption('factory_000_plugin_activated_' . $this->plugin_name, 0);
+
+				if( !$activated ) {
+					$this->updateOption('factory_000_plugin_activated_' . $this->plugin_name, time());
+				}
+			}
+			
+			/**
+			 * Converts string representation of the version to the numeric.
+			 *
+			 * @since 1.0.0
+			 * @param string $version A string version to convert.
+			 * @return integer
+			 */
+			protected function getVersionNumber($version)
+			{
+				preg_match('/(\d+)\.(\d+)\.(\d+)/', $version, $matches);
+				if( count($matches) == 0 ) {
+					return false;
+				}
+				
+				$number = '';
+				$number .= (strlen($matches[1]) == 1)
+					? '0' . $matches[1]
+					: $matches[1];
+				$number .= (strlen($matches[2]) == 1)
+					? '0' . $matches[2]
+					: $matches[2];
+				$number .= (strlen($matches[3]) == 1)
+					? '0' . $matches[3]
+					: $matches[3];
+				
+				return intval($number);
+			}
+			
+			/**
+			 * Forces modules.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function modulesLoaded()
+			{
+				// factory_core_000_modules_loaded( $this );
+			}
+			
+			/**
+			 * Shows admin notices for a given plugin.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function showAdminNotices()
+			{
+				factory_core_000_show_admin_notices($this);
+			}
+			
+			/**
+			 * Hook action.
+			 *
+			 * @since 1.0.0
+			 * @return void
+			 */
+			public function hook()
+			{
+				factory_core_000_hook($this);
+			}
+			
+			// ----------------------------------------------------------------------
+			// Plugin row on plugins.php page
+			// ----------------------------------------------------------------------
+			
+			public function showCustomPluginRow($file, $plugin_data)
+			{
+				if( !is_network_admin() && is_multisite() ) {
+					return;
+				}
+				
+				$messages = apply_filters('wbcr_factory_000_plugin_row_' . $this->plugin_name, array(), $file, $plugin_data);
+				
+				// if nothign to show then, use default handle
+				/*if( count($messages) == 0 ) {
+					wp_plugin_update_row($file, $plugin_data);
+
+					return;
+				}*/
+				
+				if( empty($messages) ) {
+					return;
+				}
+				
+				$wp_list_table = _get_list_table('WP_Plugins_List_Table');
+				
+				foreach($messages as $message) {
+					echo '<tr class="plugin-update-tr active">';
+					echo '<td colspan="' . $wp_list_table->get_column_count() . '" class="plugin-update colspanchange">';
+					echo '<div class="update-message notice inline notice-error notice-alt">';
+					echo '<p>' . $message . '</p>';
+					echo '</div>';
+					echo '</td></tr>';
+				}
+			}
+			
+			// ----------------------------------------------------------------------
+			// Finding files
+			// ----------------------------------------------------------------------
+			
+			/**
+			 * Returns a list of files at a given path.
+			 * @param string $path path for search
+			 */
+			private function findFiles($path)
+			{
+				return $this->findFileOrFolders($path, true);
+			}
+
+			/**
+			 * Returns a list of folders at a given path.
+			 * @param string $path path for search
+			 */
+			private function findFolders($path)
+			{
+				return $this->findFileOrFolders($path, false);
+			}
+			
+			/**
+			 * Returns a list of files or folders at a given path.
+			 * @param string $path path for search
+			 * @param bool $files files or folders?
+			 */
+			private function findFileOrFolders($path, $areFiles = true)
+			{
+				if( !is_dir($path) ) {
+					return array();
+				}
+				
+				$entries = scandir($path);
+				if( empty($entries) ) {
+					return array();
+				}
+				
+				$files = array();
+				foreach($entries as $entryName) {
+					if( $entryName == '.' || $entryName == '..' ) {
+						continue;
+					}
+					
+					$filename = $path . '/' . $entryName;
+					if( ($areFiles && is_file($filename)) || (!$areFiles && is_dir($filename)) ) {
+						$files[] = array(
+							'path' => str_replace("\\", "/", $filename),
+							'name' => $areFiles
+								? str_replace('.php', '', $entryName)
+								: $entryName
+						);
+					}
+				}
+				
+				return $files;
+			}
+			
+			/**
+			 * Gets php classes defined in a specified file.
+			 * @param type $path
+			 */
+			private function getClasses($path)
+			{
+				
+				$phpCode = file_get_contents($path);
+				
+				$classes = array();
+				$tokens = token_get_all($phpCode);
+				
+				$count = count($tokens);
+				for($i = 2; $i < $count; $i++) {
+					if( is_array($tokens) && $tokens[$i - 2][0] == T_CLASS && $tokens[$i - 1][0] == T_WHITESPACE && $tokens[$i][0] == T_STRING ) {
+						
+						$extends = null;
+						if( $tokens[$i + 2][0] == T_EXTENDS && $tokens[$i + 4][0] == T_STRING ) {
+							$extends = $tokens[$i + 4][1];
+						}
+						
+						$class_name = $tokens[$i][1];
+						$classes[$path] = array(
+							'name' => $class_name,
+							'extends' => $extends
+						);
+					}
+				}
+				
+				/**
+				 * result example:
+				 *
+				 * $classes['/plugin/items/filename.php'] = array(
+				 *      'name'      => 'PluginNameItem',
+				 *      'extendes'  => 'PluginNameItemBase'
+				 * )
+				 */
+				
+				return $classes;
+			}
+			
+			// ----------------------------------------------------------------------
+			// Public methods
+			// ----------------------------------------------------------------------
+			
+			public function newScriptList()
+			{
+				return new Wbcr_Factory000_ScriptList($this);
+			}
+			
+			public function newStyleList()
+			{
+				return new Wbcr_Factory000_StyleList($this);
+			}
 		}
 	}

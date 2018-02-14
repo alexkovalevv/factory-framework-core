@@ -2,83 +2,93 @@
 	/**
 	 * The file contains a class to manage script assets.
 	 *
-	 * @author Paul Kashtanoff <paul@byonepress.com>
-	 * @copyright (c) 2013, OnePress Ltd
+	 * @author Alex Kovalev <alex.kovalevv@gmail.com>
+	 * @copyright (c) 2018, Webcraftic Ltd
 	 *
 	 * @package factory-core
 	 * @since 1.0.0
 	 */
 
-	/**
-	 * Script List
-	 *
-	 * @since 1.0.0
-	 */
-	class Factory000_ScriptList extends Factory000_AssetsList {
+	// Exit if accessed directly
+	if( !defined('ABSPATH') ) {
+		exit;
+	}
 
-		public $localizeData = array();
-		public $useAjax = false;
+	if( !class_exists('Wbcr_Factory000_ScriptList') ) {
 
-		public function connect($source = 'wordpress')
-		{
+		/**
+		 * Script List
+		 *
+		 * @since 1.0.0
+		 */
+		class Wbcr_Factory000_ScriptList extends Wbcr_Factory000_AssetsList {
 
-			// register all global required scripts
-			if( !empty($this->required[$source]) ) {
-				foreach($this->required[$source] as $script) {
-					if( 'wordpress' === $source ) {
+			public $localize_data = array();
+			public $use_ajax = false;
+
+			public function connect($source = 'wordpress')
+			{
+
+				// register all global required scripts
+				if( !empty($this->required[$source]) ) {
+					foreach($this->required[$source] as $script) {
+						if( 'wordpress' === $source ) {
+							wp_enqueue_script($script);
+						} elseif( 'bootstrap' === $source ) {
+							$this->plugin->bootstrap->enqueueScript($script);
+						}
+					}
+				}
+
+				if( $source == 'bootstrap' ) {
+					return;
+				}
+
+				$is_first_script = true;
+				$is_footer = false;
+
+				// register all other scripts
+				foreach(array($this->header_place, $this->footer_place) as $scriptPlace) {
+					foreach($scriptPlace as $script) {
+
+						wp_register_script($script, $script, array(), $this->plugin->getPluginVersion(), $is_footer);
+
+						if( $is_first_script && $this->use_ajax ) {
+							wp_localize_script($script, 'factory', array('ajaxurl' => admin_url('admin-ajax.php')));
+						}
+
+						if( !empty($this->localize_data[$script]) ) {
+
+							wp_localize_script($script, $this->localize_data[$script][0], $this->localize_data[$script][1]);
+						}
+
 						wp_enqueue_script($script);
-					} elseif( 'bootstrap' === $source ) {
-						$this->plugin->bootstrap->enqueueScript($script);
+
+						$is_first_script = false;
 					}
+
+					$is_footer = true;
 				}
 			}
 
-			if( $source == 'bootstrap' ) {
-				return;
+			public function useAjax()
+			{
+				$this->use_ajax = true;
 			}
 
-			$isFirstScript = true;
-			$isFooter = false;
+			public function localize($varname, $data)
+			{
+				$bindTo = count($this->all) == 0
+					? null
+					: end($this->all);
 
-			// register all other scripts
-			foreach(array($this->headerPlace, $this->footerPlace) as $scriptPlace) {
-				foreach($scriptPlace as $script) {
-
-					wp_register_script($script, $script, array(), $this->plugin->version, $isFooter);
-
-					if( $isFirstScript && $this->useAjax ) {
-						wp_localize_script($script, 'factory', array('ajaxurl' => admin_url('admin-ajax.php')));
-					}
-
-					if( !empty($this->localizeData[$script]) ) {
-
-						wp_localize_script($script, $this->localizeData[$script][0], $this->localizeData[$script][1]);
-					}
-
-					wp_enqueue_script($script);
-					$siFirstScript = false;
+				if( !$bindTo ) {
+					return;
 				}
 
-				$isFooter = true;
+				$this->localize_data[$bindTo] = array($varname, $data);
+
+				return $this;
 			}
-		}
-
-		public function useAjax()
-		{
-			$this->useAjax = true;
-		}
-
-		public function localize($varname, $data)
-		{
-			$bindTo = count($this->all) == 0
-				? null
-				: end($this->all);
-			if( !$bindTo ) {
-				return;
-			}
-
-			$this->localizeData[$bindTo] = array($varname, $data);
-
-			return $this;
 		}
 	}

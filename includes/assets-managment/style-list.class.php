@@ -2,42 +2,50 @@
 	/**
 	 * The file contains a class to manage style assets.
 	 *
-	 * @author Paul Kashtanoff <paul@byonepress.com>
-	 * @copyright (c) 2013, OnePress Ltd
+	 * @author Alex Kovalev <alex.kovalevv@gmail.com>
+	 * @copyright (c) 2018, Webcraftic Ltd
 	 *
 	 * @package factory-core
 	 * @since 1.0.0
 	 */
 
-	/**
-	 * Style List
-	 *
-	 * @since 1.0.0
-	 */
-	class Factory000_StyleList extends Factory000_AssetsList {
+	// Exit if accessed directly
+	if( !defined('ABSPATH') ) {
+		exit;
+	}
 
-		public function connect($source = 'wordpress')
-		{
+	if( !class_exists('Wbcr_Factory000_StyleList') ) {
 
-			// register all global required scripts
-			if( !empty($this->required[$source]) ) {
+		/**
+		 * Style List
+		 *
+		 * @since 1.0.0
+		 */
+		class Wbcr_Factory000_StyleList extends Wbcr_Factory000_AssetsList {
 
-				foreach($this->required[$source] as $style) {
-					if( 'wordpress' === $source ) {
-						wp_enqueue_style($style);
-					} elseif( 'bootstrap' === $source ) {
-						$this->plugin->bootstrap->enqueueStyle($style);
+			public function connect($source = 'wordpress')
+			{
+
+				// register all global required scripts
+				if( !empty($this->required[$source]) ) {
+
+					foreach($this->required[$source] as $style) {
+						if( 'wordpress' === $source ) {
+							wp_enqueue_style($style);
+						} elseif( 'bootstrap' === $source ) {
+							$this->plugin->bootstrap->enqueueStyle($style);
+						}
 					}
 				}
-			}
 
-			if( $source == 'bootstrap' ) {
-				return;
-			}
+				if( $source == 'bootstrap' ) {
+					return;
+				}
 
-			// register all other styles
-			foreach($this->all as $style) {
-				wp_enqueue_style(md5($style), $style, array(), $this->plugin->version);
+				// register all other styles
+				foreach($this->all as $style) {
+					wp_enqueue_style(md5($style), $style, array(), $this->plugin->getPluginVersion());
+				}
 			}
 		}
 	}
