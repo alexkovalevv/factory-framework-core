@@ -29,6 +29,11 @@
 			protected $default_place;
 
 			/**
+			 * @var Wbcr_Factory000_Plugin
+			 */
+			protected $plugin;
+
+			/**
 			 * @param Wbcr_Factory000_Plugin $plugin
 			 * @param bool $defaultIsFooter
 			 */

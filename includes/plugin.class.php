@@ -88,7 +88,7 @@
 			 *
 			 * @var Wbcr_FactoryBootstrap000_Manager
 			 */
-			public $bootstap;
+			public $bootstrap;
 
 			/**
 			 * The Bootstrap Manager class.n.
@@ -191,11 +191,11 @@
 			}
 
 			/**
-			 * @param Wbcr_FactoryBootstrap000_Manager $bootstap
+			 * @param Wbcr_FactoryBootstrap000_Manager $bootstrap
 			 */
-			public function setBootstap(Wbcr_FactoryBootstrap000_Manager $bootstap)
+			public function setBootstap(Wbcr_FactoryBootstrap000_Manager $bootstrap)
 			{
-				$this->bootstap = $bootstap;
+				$this->bootstrap = $bootstrap;
 			}
 
 			/**

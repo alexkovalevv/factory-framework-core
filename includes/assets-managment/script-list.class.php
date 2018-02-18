@@ -26,6 +26,9 @@
 			public $localize_data = array();
 			public $use_ajax = false;
 
+			/**
+			 * @param string $source
+			 */
 			public function connect($source = 'wordpress')
 			{
 
