@@ -39,8 +39,15 @@
 				}
 				
 				$this->request = new Wbcr_Factory000_Request();
-				
-				self::$_opt_buffer[$this->prefix] = get_option($this->prefix . 'cache_options', array());
+
+				$cache_options = get_option($this->prefix . 'cache_options', array());
+
+				if( empty($cache_options) || !is_array($cache_options) ) {
+					$cache_options = array();
+					delete_option($this->prefix . 'cache_options');
+				}
+
+				self::$_opt_buffer[$this->prefix] = $cache_options;
 			}
 			
 			/**
@@ -83,15 +90,21 @@
 			 *
 			 * @param string $option_name
 			 * @param string $value
-			 * @return bool
+			 * @return void
 			 */
 			public function updateOption($option_name, $value)
 			{
 				if( $this->isCacheable($value) ) {
 					$this->setCacheOption($option_name, $this->normalizeValue($value));
+				} else {
+					if( isset(self::$_opt_buffer[$this->prefix][$option_name]) ) {
+						unset(self::$_opt_buffer[$this->prefix][$option_name]);
+
+						$this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
+					}
 				}
-				
-				return update_option($this->prefix . $option_name, $value);
+
+				update_option($this->prefix . $option_name, $value);
 			}
 			
 			/**
@@ -122,50 +135,40 @@
 			 * индивидуально удаляет опцию из кеша.
 			 *
 			 * @param string $option_name
-			 * @return bool
+			 * @return void
 			 */
 			public function deleteOption($option_name)
 			{
-				if( isset(self::$_opt_buffer[$this->prefix]) ) {
-					unset(self::$_opt_buffer[$this->prefix]);
+				if( isset(self::$_opt_buffer[$this->prefix][$option_name]) ) {
+					unset(self::$_opt_buffer[$this->prefix][$option_name]);
 					
-					return $this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
+					$this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
 				}
-				
-				if( !delete_option($this->prefix . $option_name . '_is_active') ) {
-					return false;
-				}
-				
-				if( !delete_option($this->prefix . $option_name) ) {
-					return false;
-				}
-				
-				return true;
+
+				delete_option($this->prefix . $option_name . '_is_active');
+				delete_option($this->prefix . $option_name);
 			}
 			
 			/**
 			 * Пакетное удаление опций, после удаления опции происходит очистка кеша и буфера опций
 			 *
 			 * @param array $options
-			 * @return bool
+			 * @return void
 			 */
 			public function deleteOptions($options)
 			{
-				if( empty($options) ) {
-					return false;
-				}
-				
-				foreach((array)$options as $option_name) {
-					if( isset(self::$_opt_buffer[$this->prefix]) ) {
-						unset(self::$_opt_buffer[$this->prefix]);
+				if( !empty($options) ) {
+					foreach((array)$options as $option_name) {
+						if( isset(self::$_opt_buffer[$this->prefix]) ) {
+							unset(self::$_opt_buffer[$this->prefix]);
+						}
+
+						delete_option($this->prefix . $option_name . '_is_active');
+						delete_option($this->prefix . $option_name);
 					}
-					
-					delete_option($this->prefix . $option_name);
+
+					$this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
 				}
-				
-				$this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
-				
-				return true;
 			}
 			
 			/**
@@ -180,7 +183,7 @@
 					self::$_opt_buffer[$this->prefix] = array();
 				}
 				
-				return $this->deleteOption('cache_options');
+				$this->deleteOption('cache_options');
 			}
 			
 			/**
@@ -219,7 +222,7 @@
 			 *
 			 * @param string $option_name
 			 * @param string $value
-			 * @return bool
+			 * @return void
 			 * @throws Exception
 			 */
 			protected function setCacheOption($option_name, $value)
@@ -227,10 +230,8 @@
 				$this->setBufferOption($option_name, $value);
 				
 				if( !empty(self::$_opt_buffer[$this->prefix]) ) {
-					return $this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
+					$this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
 				}
-				
-				return false;
 			}
 			
 			/**
@@ -249,7 +250,7 @@
 				}
 				
 				if( !empty(self::$_opt_buffer[$this->prefix]) ) {
-					return $this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
+					$this->updateOption('cache_options', self::$_opt_buffer[$this->prefix]);
 				}
 				
 				return false;

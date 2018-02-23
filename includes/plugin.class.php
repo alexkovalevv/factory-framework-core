@@ -108,7 +108,7 @@
 			public function __construct($plugin_path, $data)
 			{
 				parent::__construct($plugin_path, $data);
-				
+
 				foreach((array)$data as $option_name => $option_value) {
 					if( !isset($this->$option_name) ) {
 						$this->$option_name = $option_value;
@@ -117,10 +117,10 @@
 
 				$this->is_admin = is_admin();
 				
-				if( empty($this->prefix) || empty($this->plugin_title) || empty($this->plugin_version) || empty($this->plugin_assembly) ) {
-					throw new Exception('Не передан один из обязательных атрибутов (prefix,plugin_title,plugin_name,plugin_version,plugin_build,plugin_assembly).');
+				if( empty($this->prefix) || empty($this->plugin_title) || empty($this->plugin_version) || empty($this->plugin_build) ) {
+					throw new Exception('Не передан один из обязательных атрибутов (prefix,plugin_title,plugin_name,plugin_version,plugin_build).');
 				}
-				
+
 				// saves plugin basic paramaters
 				$this->main_file = $plugin_path;
 				$this->plugin_root = dirname($plugin_path);
@@ -131,10 +131,10 @@
 				$this->plugin_slug = !empty($this->plugin_name)
 					? $this->plugin_name
 					: basename($plugin_path);
-				
+
 				// init actions
 				$this->setupActions();
-				
+
 				// register activation hooks
 				if( is_admin() ) {
 					register_activation_hook($this->main_file, array($this, 'forceActivationHook'));
@@ -297,7 +297,7 @@
 			private function setupActions()
 			{
 				add_action('init', array($this, 'checkPluginVersioninDatabase'));
-				
+
 				if( $this->is_admin ) {
 					add_action('admin_init', array($this, 'customizePluginRow'), 20);
 					add_action('wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, array(
@@ -318,11 +318,11 @@
 			 */
 			public function checkPluginVersioninDatabase()
 			{
-				
+
 				// checks whether the plugin needs to run updates.
 				if( $this->is_admin ) {
 					$plugin_version = $this->getPluginVersionFromDatabase();
-					
+
 					if( $plugin_version != $this->plugin_build . '-' . $this->plugin_version ) {
 						$this->activationOrUpdateHook(false);
 					}
@@ -337,17 +337,11 @@
 			 */
 			public function getPluginVersionFromDatabase()
 			{
-				$plugin_versions = $this->getOption('factory_000_plugin_versions', array());
+				$plugin_versions = $this->getOption('factory_plugin_versions', array());
 				$plugin_version = isset ($plugin_versions[$this->plugin_name])
 					? $plugin_versions[$this->plugin_name]
 					: null;
-				
-				// for combability with previous versions
-				// @todo: remove after several updates
-				if( !$plugin_version ) {
-					return $this->getOption('fy_plugin_version_' . $this->plugin_name, null);
-				}
-				
+
 				return $plugin_version;
 			}
 			
@@ -359,9 +353,9 @@
 			 */
 			public function updatePluginVersionInDatabase()
 			{
-				$plugin_versions = $this->getOption('factory_000_plugin_versions', array());
+				$plugin_versions = $this->getOption('factory_plugin_versions', array());
 				$plugin_versions[$this->plugin_name] = $this->plugin_build . '-' . $this->plugin_version;
-				$this->updateOption('factory_000_plugin_versions', $plugin_versions);
+				$this->updateOption('factory_plugin_versions', $plugin_versions);
 			}
 			
 			/**
