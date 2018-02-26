@@ -16,7 +16,29 @@
 	
 	if( !class_exists('Wbcr_Factory000_Plugin') ) {
 		
-		class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
+		abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
+
+			/**
+			 * Is a current page one of the admin pages?
+			 *
+			 * @since 1.0.0
+			 * @var bool
+			 */
+			public $is_admin;
+
+			/**
+			 * The Bootstrap Manager class.n.
+			 *
+			 * @var Wbcr_FactoryBootstrap000_Manager
+			 */
+			public $bootstrap;
+
+			/**
+			 * The Bootstrap Manager class.n.
+			 *
+			 * @var Wbcr_FactoryForms000_Manager
+			 */
+			public $forms;
 
 			/**
 			 * @var string
@@ -64,19 +86,6 @@
 			protected $plugin_url;
 
 			/**
-			 * @var string
-			 */
-			protected $updates;
-			
-			/**
-			 * Is a current page one of the admin pages?
-			 *
-			 * @since 1.0.0
-			 * @var bool
-			 */
-			public $is_admin;
-			
-			/**
 			 * A class name of an activator to activate the plugin.
 			 *
 			 * @var string
@@ -84,18 +93,15 @@
 			protected $activator_class = array();
 
 			/**
-			 * The Bootstrap Manager class.n.
-			 *
-			 * @var Wbcr_FactoryBootstrap000_Manager
+			 * @var string
 			 */
-			public $bootstrap;
+			protected $updates;
+
 
 			/**
-			 * The Bootstrap Manager class.n.
-			 *
-			 * @var Wbcr_FactoryForms000_Manager
+			 * @var WHM_Plugin
 			 */
-			public $forms;
+			private static $app;
 			
 			/**
 			 * Creates an instance of Factory plugin.
@@ -115,10 +121,12 @@
 					}
 				}
 
+				self::$app = $this;
+
 				$this->is_admin = is_admin();
 				
 				if( empty($this->prefix) || empty($this->plugin_title) || empty($this->plugin_version) || empty($this->plugin_build) ) {
-					throw new Exception('Не передан один из обязательных атрибутов (prefix,plugin_title,plugin_name,plugin_version,plugin_build).');
+					throw new Exception('One of the required attributes has not been passed (prefix,plugin_title,plugin_name,plugin_version,plugin_build).');
 				}
 
 				// saves plugin basic paramaters
@@ -140,6 +148,15 @@
 					register_activation_hook($this->main_file, array($this, 'forceActivationHook'));
 					register_deactivation_hook($this->main_file, array($this, 'deactivationHook'));
 				}
+			}
+
+
+			/**
+			 * @return WHM_Plugin
+			 */
+			public static function app()
+			{
+				return self::$app;
 			}
 
 			/**
@@ -191,22 +208,6 @@
 			}
 
 			/**
-			 * @param Wbcr_FactoryBootstrap000_Manager $bootstrap
-			 */
-			public function setBootstap(Wbcr_FactoryBootstrap000_Manager $bootstrap)
-			{
-				$this->bootstrap = $bootstrap;
-			}
-
-			/**
-			 * @param Wbcr_FactoryForms000_Manager $forms
-			 */
-			public function setForms(Wbcr_FactoryForms000_Manager $forms)
-			{
-				$this->forms = $forms;
-			}
-
-			/**
 			 * @return stdClass
 			 */
 			public function getPluginPathInfo()
@@ -223,13 +224,53 @@
 			}
 
 			/**
+			 * @param Wbcr_FactoryBootstrap000_Manager $bootstrap
+			 */
+			public function setBootstap(Wbcr_FactoryBootstrap000_Manager $bootstrap)
+			{
+				$this->bootstrap = $bootstrap;
+			}
+
+			/**
+			 * @param Wbcr_FactoryForms000_Manager $forms
+			 */
+			public function setForms(Wbcr_FactoryForms000_Manager $forms)
+			{
+				$this->forms = $forms;
+			}
+
+			protected abstract function setTextDomain();
+
+			protected abstract function setModules();
+
+			/**
+			 * @param string $class_name
+			 * @param string $path
+			 */
+			protected function registerPage($class_name, $path)
+			{
+				$file_path = $this->plugin_root . '/' . $path;
+
+				if( !file_exists($file_path) ) {
+					throw new Exception('The page file was not found by the path {' . $file_path . '} you set.');
+				}
+
+				require_once($this->plugin_root . '/' . $path);
+
+				if( !class_exists($class_name) ) {
+					throw new Exception('A class with this name {' . $class_name . '} does not exist.');
+				}
+				Wbcr_FactoryPages000::register($this, $class_name);
+			}
+
+			/**
 			 * Loads modules required for a plugin.
 			 *
 			 * @since 3.2.0
 			 * @param mixed[] $modules
 			 * @return void
 			 */
-			public function load($modules = array())
+			protected function load($modules = array())
 			{
 				foreach($modules as $module) {
 					$this->loadModule($module);
@@ -241,18 +282,18 @@
 			/**
 			 * Loads add-ons for the plugin.
 			 */
-			public function loadAddons($addons)
+			protected function loadAddons($addons)
 			{
 				if( empty($addons) ) {
 					return;
 				}
 				
-				foreach($addons as $addonName => $addonPath) {
-					$constName = strtoupper('LOADING_' . $addonName . '_AS_ADDON');
-					if( !defined($constName) ) {
-						define($constName, true);
+				foreach($addons as $addon_name => $addon_path) {
+					$const_name = strtoupper('LOADING_' . $addon_name . '_AS_ADDON');
+					if( !defined($const_name) ) {
+						define($const_name, true);
 					}
-					require_once($addonPath);
+					require_once($addon_path);
 				}
 			}
 			
@@ -264,7 +305,7 @@
 			 * @param string $moduleVersion
 			 * @return void
 			 */
-			public function loadModule($module)
+			protected function loadModule($module)
 			{
 				$scope = isset($module[2])
 					? $module[2]
@@ -273,7 +314,7 @@
 				if( $scope == 'all' || (is_admin() && $scope == 'admin') || (!is_admin() && $scope == 'public') ) {
 					
 					require $this->plugin_root . '/' . $module[0] . '/boot.php';
-					do_action('wbcr_' . $module[1] . '_000_plugin_created', $this);
+					do_action('wbcr_' . $module[1] . '_plugin_created', $this);
 				}
 			}
 			
@@ -281,10 +322,10 @@
 			 * Registers a class to activate the plugin.
 			 *
 			 * @since 1.0.0
-			 * @param string A class name of the plugin activator.
+			 * @param string $className class name of the plugin activator.
 			 * @return void
 			 */
-			public function registerActivation($className)
+			protected function registerActivation($className)
 			{
 				$this->activator_class[] = $className;
 			}
@@ -300,10 +341,10 @@
 
 				if( $this->is_admin ) {
 					add_action('admin_init', array($this, 'customizePluginRow'), 20);
-					add_action('wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, array(
+					/*add_action('wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, array(
 						$this,
 						'modulesLoaded'
-					));
+					));*/
 				}
 			}
 			
@@ -613,33 +654,11 @@
 			 * @since 1.0.0
 			 * @return void
 			 */
-			public function modulesLoaded()
-			{
-				// factory_core_000_modules_loaded( $this );
-			}
-			
-			/**
-			 * Shows admin notices for a given plugin.
-			 *
-			 * @since 1.0.0
-			 * @return void
-			 */
-			public function showAdminNotices()
-			{
-				factory_core_000_show_admin_notices($this);
-			}
-			
-			/**
-			 * Hook action.
-			 *
-			 * @since 1.0.0
-			 * @return void
-			 */
-			public function hook()
-			{
-				factory_core_000_hook($this);
-			}
-			
+			//public function modulesLoaded()
+			//{
+			// factory_core_000_modules_loaded( $this );
+			//}
+
 			// ----------------------------------------------------------------------
 			// Plugin row on plugins.php page
 			// ----------------------------------------------------------------------
@@ -735,7 +754,7 @@
 			
 			/**
 			 * Gets php classes defined in a specified file.
-			 * @param type $path
+			 * @param string $path
 			 */
 			private function getClasses($path)
 			{
