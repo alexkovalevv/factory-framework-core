@@ -40,14 +40,16 @@
 				
 				$this->request = new Wbcr_Factory000_Request();
 
-				$cache_options = get_option($this->prefix . 'cache_options', array());
+				if( !isset(self::$_opt_buffer[$this->prefix]) ) {
+					$cache_options = get_option($this->prefix . 'cache_options', array());
 
-				if( empty($cache_options) || !is_array($cache_options) ) {
-					$cache_options = array();
-					delete_option($this->prefix . 'cache_options');
+					if( empty($cache_options) || !is_array($cache_options) ) {
+						$cache_options = array();
+						delete_option($this->prefix . 'cache_options');
+					}
+
+					self::$_opt_buffer[$this->prefix] = $cache_options;
 				}
-
-				self::$_opt_buffer[$this->prefix] = $cache_options;
 			}
 			
 			/**

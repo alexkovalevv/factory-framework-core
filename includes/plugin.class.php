@@ -97,11 +97,20 @@
 			 */
 			protected $updates;
 
-
 			/**
-			 * @var WHM_Plugin
+			 * @var Wbcr_Factory000_Plugin
 			 */
 			private static $app;
+
+			/**
+			 * @var array[] Wbcr_Factory000_Plugin
+			 */
+			private $plugin_addons;
+
+			/**
+			 * @var array
+			 */
+			private $plugin_data;
 			
 			/**
 			 * Creates an instance of Factory plugin.
@@ -113,6 +122,8 @@
 			 */
 			public function __construct($plugin_path, $data)
 			{
+				$this->plugin_data = $data;
+
 				parent::__construct($plugin_path, $data);
 
 				foreach((array)$data as $option_name => $option_value) {
@@ -239,23 +250,22 @@
 				$this->forms = $forms;
 			}
 
-			protected abstract function setTextDomain();
+			//protected abstract function setTextDomain();
 
-			protected abstract function setModules();
+			//protected abstract function setModules();
 
 			/**
 			 * @param string $class_name
 			 * @param string $path
 			 */
-			protected function registerPage($class_name, $path)
+			public function registerPage($class_name, $file_path)
 			{
-				$file_path = $this->plugin_root . '/' . $path;
 
 				if( !file_exists($file_path) ) {
 					throw new Exception('The page file was not found by the path {' . $file_path . '} you set.');
 				}
 
-				require_once($this->plugin_root . '/' . $path);
+				require_once($file_path);
 
 				if( !class_exists($class_name) ) {
 					throw new Exception('A class with this name {' . $class_name . '} does not exist.');
@@ -289,11 +299,20 @@
 				}
 				
 				foreach($addons as $addon_name => $addon_path) {
-					$const_name = strtoupper('LOADING_' . $addon_name . '_AS_ADDON');
-					if( !defined($const_name) ) {
-						define($const_name, true);
+					if( !isset($this->plugin_addons[$addon_name]) ) {
+						$const_name = strtoupper('LOADING_' . $addon_name . '_AS_ADDON');
+
+						if( !defined($const_name) ) {
+							define($const_name, true);
+						}
+						require_once($addon_path[1]);
+
+						$plugin_data = $this->plugin_data;
+						$plugin_data['as_addon'] = true;
+						$plugin_data['plugin_parent'] = $this;
+
+						$this->plugin_addons[$addon_name] = new $addon_path[0]($this->main_file, $plugin_data);
 					}
-					require_once($addon_path);
 				}
 			}
 			
@@ -325,7 +344,7 @@
 			 * @param string $className class name of the plugin activator.
 			 * @return void
 			 */
-			protected function registerActivation($className)
+			public function registerActivation($className)
 			{
 				$this->activator_class[] = $className;
 			}
