@@ -397,7 +397,7 @@
 			 */
 			public function getPluginVersionFromDatabase()
 			{
-				$plugin_versions = $this->getOption('factory_plugin_versions', array());
+				$plugin_versions = get_option('factory_plugin_versions', array());
 				$plugin_version = isset ($plugin_versions[$this->plugin_name])
 					? $plugin_versions[$this->plugin_name]
 					: null;
@@ -413,9 +413,9 @@
 			 */
 			public function updatePluginVersionInDatabase()
 			{
-				$plugin_versions = $this->getOption('factory_plugin_versions', array());
+				$plugin_versions = get_option('factory_plugin_versions', array());
 				$plugin_versions[$this->plugin_name] = $this->plugin_build . '-' . $this->plugin_version;
-				$this->updateOption('factory_plugin_versions', $plugin_versions);
+				update_option('factory_plugin_versions', $plugin_versions);
 			}
 			
 			/**
