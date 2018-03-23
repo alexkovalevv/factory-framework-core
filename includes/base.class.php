@@ -22,9 +22,9 @@
 			protected $prefix;
 			
 			/**
-			 * Экзамеляр класса FactoryPages000_Request, необходим управляет http запросами
+			 * Экзамеляр класса Wbcr_Factory000_Request, необходим управляет http запросами
 			 *
-			 * @var FactoryPages000_Request
+			 * @var Wbcr_Factory000_Request
 			 */
 			public $request;
 			

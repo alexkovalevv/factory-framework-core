@@ -19,7 +19,7 @@
 				$sanitize_function_name = 'sanitize_text_field';
 				$method = $_REQUEST;
 
-				switch( mb_strtoupper($method_name) ) {
+				switch( strtoupper($method_name) ) {
 					case 'GET':
 						$method = $_GET;
 						break;
