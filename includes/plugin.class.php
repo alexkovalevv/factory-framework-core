@@ -98,11 +98,6 @@
 			protected $updates;
 
 			/**
-			 * @var Wbcr_Factory000_Plugin
-			 */
-			private static $app;
-
-			/**
 			 * @var array[] Wbcr_Factory000_Plugin
 			 */
 			private $plugin_addons;
@@ -132,8 +127,6 @@
 					}
 				}
 
-				self::$app = $this;
-
 				$this->is_admin = is_admin();
 				
 				if( empty($this->prefix) || empty($this->plugin_title) || empty($this->plugin_version) || empty($this->plugin_build) ) {
@@ -159,15 +152,6 @@
 					register_activation_hook($this->main_file, array($this, 'forceActivationHook'));
 					register_deactivation_hook($this->main_file, array($this, 'deactivationHook'));
 				}
-			}
-
-
-			/**
-			 * @return WHM_Plugin
-			 */
-			public static function app()
-			{
-				return self::$app;
 			}
 
 			/**
@@ -271,6 +255,26 @@
 					throw new Exception('A class with this name {' . $class_name . '} does not exist.');
 				}
 				Wbcr_FactoryPages000::register($this, $class_name);
+			}
+
+			/**
+			 * @param string $class_name
+			 * @param string $path
+			 */
+			public function registerType($class_name, $file_path)
+			{
+
+				if( !file_exists($file_path) ) {
+					throw new Exception('The page file was not found by the path {' . $file_path . '} you set.');
+				}
+
+				require_once($file_path);
+
+				if( !class_exists($class_name) ) {
+					throw new Exception('A class with this name {' . $class_name . '} does not exist.');
+				}
+
+				Wbcr_FactoryTypes000::register($class_name, $this);
 			}
 
 			/**
