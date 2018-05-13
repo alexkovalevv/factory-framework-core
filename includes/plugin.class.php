@@ -3,7 +3,7 @@
 	 * The file contains the class to register a plugin in the Factory.
 	 *
 	 * @author Alex Kovalev <alex.kovalevv@gmail.com>
-	 * @copyright (c) 2018, Webcraftic Ltd
+	 * @copyright (c) 2018 Webcraftic Ltd
 	 *
 	 * @package factory-core
 	 * @since 1.0.0
@@ -234,10 +234,6 @@
 				$this->forms = $forms;
 			}
 
-			//protected abstract function setTextDomain();
-
-			//protected abstract function setModules();
-
 			/**
 			 * @param string $class_name
 			 * @param string $path
@@ -254,6 +250,11 @@
 				if( !class_exists($class_name) ) {
 					throw new Exception('A class with this name {' . $class_name . '} does not exist.');
 				}
+
+				if( !class_exists('Wbcr_FactoryPages000') ) {
+					throw new Exception('The factory_pages_000 module is not included.');
+				}
+
 				Wbcr_FactoryPages000::register($this, $class_name);
 			}
 
@@ -272,6 +273,10 @@
 
 				if( !class_exists($class_name) ) {
 					throw new Exception('A class with this name {' . $class_name . '} does not exist.');
+				}
+
+				if( !class_exists('Wbcr_FactoryTypes000') ) {
+					throw new Exception('The factory_types_000 module is not included.');
 				}
 
 				Wbcr_FactoryTypes000::register($class_name, $this);
@@ -294,7 +299,14 @@
 			}
 
 			/**
-			 * Loads add-ons for the plugin.
+			 * Загружает аддоны для плагина, как часть проекта, а не как отдельный плагин
+			 * @param array $addons - массив со списком загружаемых аддонов.
+			 * array(
+			 * 'hide_login_page' => -  ключ, идентификатора массива с информацией об аддоне
+			 * array(
+			 * 'WHLP_Plugin', - имя основного класса аддона
+			 * WCL_PLUGIN_DIR . '/components/hide-login-page/hide-login-page.php' - пусть к основному файлу аддона
+			 * ));
 			 */
 			protected function loadAddons($addons)
 			{
@@ -304,28 +316,45 @@
 				
 				foreach($addons as $addon_name => $addon_path) {
 					if( !isset($this->plugin_addons[$addon_name]) ) {
+
+						// При подключении аддона, мы объявляем константу, что такой аддон уже загружен
+						// $addon_name индентификатор аддона в вверхнем регистре
 						$const_name = strtoupper('LOADING_' . $addon_name . '_AS_ADDON');
 
 						if( !defined($const_name) ) {
 							define($const_name, true);
 						}
+
 						require_once($addon_path[1]);
 
+						// Передаем аддону информацию о родительском плагине
 						$plugin_data = $this->plugin_data;
+
+						// Устанавливаем метку для аддона, которая указывает на то, что это аддон
 						$plugin_data['as_addon'] = true;
+
+						// Передаем класс родителя в аддон, для того,
+						// чтобы аддон использовал экземпляр класса родителя, а не создавал свой собственный.
 						$plugin_data['plugin_parent'] = $this;
 
+						// Создаем экземпляр класса аддона и записываем его в список загруженных аддонов
 						$this->plugin_addons[$addon_name] = new $addon_path[0]($this->main_file, $plugin_data);
 					}
 				}
 			}
 			
 			/**
-			 * Loads a specified module.
+			 * Загружает специальные модули для расширения фреймворка "Factory"
 			 *
 			 * @since 3.2.0
-			 * @param string $modulePath
-			 * @param string $moduleVersion
+			 * @param array $module - массив с информацией о загружаемом модуле,
+			 * пример array('libs/factory/bootstrap', 'factory_bootstrap_000', 'admin'),
+			 * $module[0] - относительный путь к директории модуля
+			 * $module[1] - идентификатор модуля с префиксом 000
+			 * $module[2] - область применения,
+			 * admin - модуль будет загружен только в админ панели,
+			 * public - будет загружен только на фронтенде
+			 * all - модуль будет загружен везде
 			 * @return void
 			 */
 			protected function loadModule($module)
@@ -335,8 +364,12 @@
 					: 'all';
 				
 				if( $scope == 'all' || (is_admin() && $scope == 'admin') || (!is_admin() && $scope == 'public') ) {
-					
-					require $this->plugin_root . '/' . $module[0] . '/boot.php';
+
+					if( !file_exists($this->plugin_root . '/' . $module[0] . '/boot.php') ) {
+						throw new Exception('Module ' . $module[1] . ' is not included.');
+					}
+
+					require_once $this->plugin_root . '/' . $module[0] . '/boot.php';
 					do_action('wbcr_' . $module[1] . '_plugin_created', $this);
 				}
 			}

@@ -4,7 +4,7 @@
 		exit;
 	}
 
-	if( !class_exists('Wbcr_Factory000_Plugin') ) {
+	if( !class_exists('Wbcr_Factory000_Request') ) {
 		class Wbcr_Factory000_Request {
 
 			/**
