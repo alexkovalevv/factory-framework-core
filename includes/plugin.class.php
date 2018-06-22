@@ -404,6 +404,7 @@
 
 				if( $this->is_admin ) {
 					add_action('admin_init', array($this, 'customizePluginRow'), 20);
+					add_filter( 'wbcr_factory_000_core_admin_allow_multisite', '__return_true' );
 					/*add_action('wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, array(
 						$this,
 						'modulesLoaded'
