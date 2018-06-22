@@ -235,10 +235,13 @@
 			}
 
 			/**
-			 * @param string $class_name
-			 * @param string $path
+			 * @param $class_name
+			 * @param $file_path
+			 * @param int $type
+			 *
+			 * @throws Exception
 			 */
-			public function registerPage($class_name, $file_path)
+			public function registerPage($class_name, $file_path, $type = WBCR_PAGE_TYPE_SETTINGS )
 			{
 
 				if( !file_exists($file_path) ) {
@@ -255,7 +258,11 @@
 					throw new Exception('The factory_pages_000 module is not included.');
 				}
 
-				Wbcr_FactoryPages000::register($this, $class_name);
+				if ( $type == WBCR_PAGE_TYPE_NETWORK ) {
+					Wbcr_FactoryPages000::registerNetwork($this, $class_name);
+				} else {
+					Wbcr_FactoryPages000::register($this, $class_name);
+				}
 			}
 
 			/**
