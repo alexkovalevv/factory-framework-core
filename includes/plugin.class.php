@@ -41,21 +41,29 @@
 			public $forms;
 
 			/**
+			 * Заголовок плагина
+			 *
 			 * @var string
 			 */
 			protected $plugin_title;
 
 			/**
+			 * Название плагина
+			 *
 			 * @var string
 			 */
 			protected $plugin_name;
 
 			/**
+			 * Версия плагина
+			 *
 			 * @var string
 			 */
 			protected $plugin_version;
 
 			/**
+			 * Тип сборки плагина. Возможнные варианты: free, premium, trial
+			 *
 			 * @var string
 			 */
 			protected $plugin_build;
@@ -66,21 +74,29 @@
 			protected $plugin_assembly;
 
 			/**
+			 * Абсолютный путь к основному файлу плагина.
+			 *
 			 * @var string
 			 */
 			protected $main_file;
 
 			/**
+			 * Абсолютный путь к директории плагина
+			 *
 			 * @var string
 			 */
 			protected $plugin_root;
 
 			/**
+			 * Относительный путь к директории плагина
+			 *
 			 * @var string
 			 */
 			protected $relative_path;
 
 			/**
+			 * Ссылка на директорию плагина
+			 *
 			 * @var string
 			 */
 			protected $plugin_url;
@@ -93,11 +109,15 @@
 			protected $activator_class = array();
 
 			/**
+			 * Путь к директории миграций. В этой директории хранятся миграции для разных версий плагина.
+			 * По умолчанию plugin_dir/updates
 			 * @var string
 			 */
 			protected $updates;
 
 			/**
+			 * Подключенные компоненнты плагина
+			 *
 			 * @var array[] Wbcr_Factory000_Plugin
 			 */
 			private $plugin_addons;
@@ -143,6 +163,10 @@
 				$this->plugin_slug = !empty($this->plugin_name)
 					? $this->plugin_name
 					: basename($plugin_path);
+
+				if( empty($this->updates) && file_exists($this->plugin_root . '/updates') ) {
+					$this->updates = $this->plugin_root . '/updates';
+				}
 
 				// init actions
 				$this->setupActions();
