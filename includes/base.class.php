@@ -91,7 +91,7 @@
 			 * Не кешируемые опции это массивы, сериализованные массивы, строки больше 150 символов
 			 *
 			 * @param string $option_name
-			 * @param string $value
+			 * @param mixed $value
 			 * @return void
 			 */
 			public function updateOption($option_name, $value)
