@@ -343,7 +343,7 @@
 
 						// При подключении аддона, мы объявляем константу, что такой аддон уже загружен
 						// $addon_name индентификатор аддона в вверхнем регистре
-						$const_name = strtoupper('LOADING_' . $addon_name . '_AS_ADDON');
+						$const_name = strtoupper('LOADING_' . str_replace('-', '_', $addon_name) . '_AS_ADDON');
 
 						if( !defined($const_name) ) {
 							define($const_name, true);
