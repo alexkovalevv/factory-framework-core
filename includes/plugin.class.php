@@ -362,7 +362,9 @@
 						$plugin_data['plugin_parent'] = $this;
 
 						// Создаем экземпляр класса аддона и записываем его в список загруженных аддонов
-						$this->plugin_addons[$addon_name] = new $addon_path[0]($this->main_file, $plugin_data);
+						if(class_exists($addon_path[0])) {
+							$this->plugin_addons[$addon_name] = new $addon_path[0]($this->main_file, $plugin_data);
+						}
 					}
 				}
 			}
