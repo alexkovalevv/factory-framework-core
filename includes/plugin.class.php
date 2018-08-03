@@ -142,7 +142,7 @@
 				parent::__construct($plugin_path, $data);
 
 				foreach((array)$data as $option_name => $option_value) {
-					if( !isset($this->$option_name) ) {
+					if( property_exists($this, $option_name) ) {
 						$this->$option_name = $option_value;
 					}
 				}
@@ -240,6 +240,27 @@
 				$object->plugin_url = $this->plugin_url;
 
 				return $object;
+			}
+
+			/**
+			 * @param $attr_name
+			 * @return null
+			 */
+			public function getPluginInfoAttr($attr_name)
+			{
+				if( isset($this->plugin_data[$attr_name]) ) {
+					return $this->plugin_data[$attr_name];
+				}
+
+				return null;
+			}
+
+			/**
+			 * @return object
+			 */
+			public function getPluginInfo()
+			{
+				return (object)$this->plugin_data;
 			}
 
 			/**
@@ -362,7 +383,7 @@
 						$plugin_data['plugin_parent'] = $this;
 
 						// Создаем экземпляр класса аддона и записываем его в список загруженных аддонов
-						if(class_exists($addon_path[0])) {
+						if( class_exists($addon_path[0]) ) {
 							$this->plugin_addons[$addon_name] = new $addon_path[0]($this->main_file, $plugin_data);
 						}
 					}
