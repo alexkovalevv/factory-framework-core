@@ -865,5 +865,18 @@
 			{
 				return new Wbcr_Factory000_StyleList($this);
 			}
+
+			public function isMultisiteNetworkAdmin() {
+				return is_multisite() && is_network_admin();
+			}
+
+			public function getActiveSites() {
+				return get_sites( array(
+					'archived' => 0,
+					'mature'   => 0,
+					'spam'     => 0,
+					'deleted'  => 0,
+				) );
+			}
 		}
 	}
