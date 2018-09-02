@@ -161,8 +161,8 @@
 			{
 				if( !empty($options) ) {
 					foreach((array)$options as $option_name) {
-						if( isset(self::$_opt_buffer[$this->prefix]) ) {
-							unset(self::$_opt_buffer[$this->prefix]);
+						if( isset(self::$_opt_buffer[$this->prefix][$option_name]) ) {
+							unset(self::$_opt_buffer[$this->prefix][$option_name]);
 						}
 
 						delete_option($this->prefix . $option_name . '_is_active');
