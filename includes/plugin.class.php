@@ -280,10 +280,12 @@
 			}
 
 			/**
-			 * @param string $class_name
-			 * @param string $path
+			 * @param $class_name
+			 * @param $file_path
+			 *
+			 * @throws Exception
 			 */
-			public function registerPage($class_name, $file_path)
+			public function registerPage($class_name, $file_path )
 			{
 
 				if( !file_exists($file_path) ) {
@@ -444,6 +446,7 @@
 
 				if( $this->is_admin ) {
 					add_action('admin_init', array($this, 'customizePluginRow'), 20);
+					add_filter( 'wbcr_factory_000_core_admin_allow_multisite', '__return_true' );
 					/*add_action('wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, array(
 						$this,
 						'modulesLoaded'
@@ -908,6 +911,19 @@
 			public function newStyleList()
 			{
 				return new Wbcr_Factory000_StyleList($this);
+			}
+
+			public function isMultisiteNetworkAdmin() {
+				return is_multisite() && is_network_admin();
+			}
+
+			public function getActiveSites() {
+				return get_sites( array(
+					'archived' => 0,
+					'mature'   => 0,
+					'spam'     => 0,
+					'deleted'  => 0,
+				) );
 			}
 		}
 	}
