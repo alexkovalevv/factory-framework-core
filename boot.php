@@ -24,6 +24,8 @@
 	define('FACTORY_000_DIR', dirname(__FILE__));
 	define('FACTORY_000_URL', plugins_url(null, __FILE__));
 
+	load_plugin_textdomain('wbcr_factory_000', false, dirname(plugin_basename(__FILE__)) . '/langs');
+
 	#comp merge
 	require_once(FACTORY_000_DIR . '/includes/functions.php');
 	require_once(FACTORY_000_DIR . '/includes/request.class.php');

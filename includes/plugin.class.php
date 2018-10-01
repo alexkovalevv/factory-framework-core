@@ -160,9 +160,7 @@
 				$this->plugin_url = plugins_url(null, $plugin_path);
 				
 				// used only in the module 'updates'
-				$this->plugin_slug = !empty($this->plugin_name)
-					? $this->plugin_name
-					: basename($plugin_path);
+				$this->plugin_slug = !empty($this->plugin_name) ? $this->plugin_name : basename($plugin_path);
 
 				if( empty($this->updates) && file_exists($this->plugin_root . '/updates') ) {
 					$this->updates = $this->plugin_root . '/updates';
@@ -280,12 +278,25 @@
 			}
 
 			/**
+			 * Устанавливает текстовый домен для плагина
+			 */
+			public function setTextDomain($domain, $plugin_dir)
+			{
+				$locale = apply_filters('plugin_locale', is_admin() ? get_user_locale() : get_locale(), $domain);
+				$mofile = $domain . '-' . $locale . '.mo';
+
+				if( !load_textdomain($domain, $plugin_dir . '/languages/' . $mofile) ) {
+					load_muplugin_textdomain($domain);
+				}
+			}
+
+			/**
 			 * @param $class_name
 			 * @param $file_path
 			 *
 			 * @throws Exception
 			 */
-			public function registerPage($class_name, $file_path )
+			public function registerPage($class_name, $file_path)
 			{
 
 				if( !file_exists($file_path) ) {
@@ -408,9 +419,7 @@
 			 */
 			protected function loadModule($module)
 			{
-				$scope = isset($module[2])
-					? $module[2]
-					: 'all';
+				$scope = isset($module[2]) ? $module[2] : 'all';
 				
 				if( $scope == 'all' || (is_admin() && $scope == 'admin') || (!is_admin() && $scope == 'public') ) {
 
@@ -446,7 +455,7 @@
 
 				if( $this->is_admin ) {
 					add_action('admin_init', array($this, 'customizePluginRow'), 20);
-					add_filter( 'wbcr_factory_000_core_admin_allow_multisite', '__return_true' );
+					add_filter('wbcr_factory_000_core_admin_allow_multisite', '__return_true');
 					/*add_action('wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, array(
 						$this,
 						'modulesLoaded'
@@ -485,9 +494,7 @@
 			public function getPluginVersionFromDatabase()
 			{
 				$plugin_versions = get_option('factory_plugin_versions', array());
-				$plugin_version = isset ($plugin_versions[$this->plugin_name])
-					? $plugin_versions[$this->plugin_name]
-					: null;
+				$plugin_version = isset ($plugin_versions[$this->plugin_name]) ? $plugin_versions[$this->plugin_name] : null;
 
 				return $plugin_version;
 			}
@@ -741,15 +748,9 @@
 				}
 				
 				$number = '';
-				$number .= (strlen($matches[1]) == 1)
-					? '0' . $matches[1]
-					: $matches[1];
-				$number .= (strlen($matches[2]) == 1)
-					? '0' . $matches[2]
-					: $matches[2];
-				$number .= (strlen($matches[3]) == 1)
-					? '0' . $matches[3]
-					: $matches[3];
+				$number .= (strlen($matches[1]) == 1) ? '0' . $matches[1] : $matches[1];
+				$number .= (strlen($matches[2]) == 1) ? '0' . $matches[2] : $matches[2];
+				$number .= (strlen($matches[3]) == 1) ? '0' . $matches[3] : $matches[3];
 				
 				return intval($number);
 			}
@@ -848,9 +849,7 @@
 					if( ($areFiles && is_file($filename)) || (!$areFiles && is_dir($filename)) ) {
 						$files[] = array(
 							'path' => str_replace("\\", "/", $filename),
-							'name' => $areFiles
-								? str_replace('.php', '', $entryName)
-								: $entryName
+							'name' => $areFiles ? str_replace('.php', '', $entryName) : $entryName
 						);
 					}
 				}
@@ -913,96 +912,28 @@
 				return new Wbcr_Factory000_StyleList($this);
 			}
 
-			public function isMultisiteNetworkAdmin() {
+			public function isMultisiteNetworkAdmin()
+			{
 				return is_multisite() && is_network_admin();
 			}
 
-			public function getActiveSites() {
-				return get_sites( array(
+			public function getActiveSites()
+			{
+				return get_sites(array(
 					'archived' => 0,
-					'mature'   => 0,
-					'spam'     => 0,
-					'deleted'  => 0,
-				) );
+					'mature' => 0,
+					'spam' => 0,
+					'deleted' => 0,
+				));
 			}
 
-			public function isNetworkActive() {
-				if (
-					is_multisite()
-					&& array_key_exists(
-						$this->relative_path, (array) get_site_option( 'active_sitewide_plugins' )
-					)
-				) {
+			public function isNetworkActive()
+			{
+				if( is_multisite() && array_key_exists($this->relative_path, (array)get_site_option('active_sitewide_plugins')) ) {
 					return true;
 				}
+
 				return false;
-			}
-
-			/**
-			 * Откатывает изменения в урлах
-			 */
-			public function rollbackUrlChanges() {
-				global $wpdb;
-
-				$posts = $wpdb->get_results( "SELECT p.ID, p.post_name, m.meta_value as old_post_name FROM {$wpdb->posts} p
-						LEFT JOIN {$wpdb->postmeta} m
-						ON p.ID = m.post_id
-						WHERE p.post_status
-						IN ('publish', 'future', 'private') AND m.meta_key='wbcr_wp_old_slug' AND m.meta_value IS NOT NULL" );
-
-				foreach ( (array) $posts as $post ) {
-					if ( $post->post_name != $post->old_post_name ) {
-						$wpdb->update( $wpdb->posts, array( 'post_name' => $post->old_post_name ), array( 'ID' => $post->ID ), array( '%s' ), array( '%d' ) );
-						delete_post_meta( $post->ID, 'wbcr_wp_old_slug' );
-					}
-				}
-
-				$terms = $wpdb->get_results( "SELECT t.term_id, t.slug, o.option_value as old_term_slug FROM {$wpdb->terms} t
-						LEFT JOIN {$wpdb->options} o
-						ON o.option_name=concat('wbcr_wp_term_',t.term_id, '_old_slug')
-						WHERE o.option_value IS NOT NULL" );
-
-				foreach ( (array) $terms as $term ) {
-					if ( $term->slug != $term->old_term_slug ) {
-						$wpdb->update( $wpdb->terms, array( 'slug' => $term->old_term_slug ), array( 'term_id' => $term->term_id ), array( '%s' ), array( '%d' ) );
-						delete_option( 'wbcr_wp_term_' . $term->term_id . '_old_slug' );
-					}
-				}
-			}
-
-			/**
-			 * Конвертирует урлы
-			 */
-			public function convertUrls() {
-				global $wpdb;
-
-				$posts = $wpdb->get_results(
-					"SELECT ID, post_name FROM {$wpdb->posts}
- 					WHERE post_name REGEXP('[^_A-Za-z0-9\-]+') AND post_status IN ('publish', 'future', 'private')"
-				);
-
-				foreach ( (array) $posts as $post ) {
-					$sanitized_name = WCTR_Helper::sanitizeTitle( urldecode( $post->post_name ) );
-
-					if ( $post->post_name != $sanitized_name ) {
-						add_post_meta( $post->ID, 'wbcr_wp_old_slug', $post->post_name );
-
-						$wpdb->update( $wpdb->posts, array( 'post_name' => $sanitized_name ), array( 'ID' => $post->ID ), array( '%s' ), array( '%d' ) );
-					}
-				}
-
-				$terms = $wpdb->get_results(
-					"SELECT term_id, slug FROM {$wpdb->terms} WHERE slug REGEXP('[^_A-Za-z0-9\-]+')"
-				);
-
-				foreach ( (array) $terms as $term ) {
-					$sanitized_slug = WCTR_Helper::sanitizeTitle( urldecode( $term->slug ) );
-
-					if ( $term->slug != $sanitized_slug ) {
-						update_option( 'wbcr_wp_term_' . $term->term_id . '_old_slug', $term->slug, false );
-						$wpdb->update( $wpdb->terms, array( 'slug' => $sanitized_slug ), array( 'term_id' => $term->term_id ), array( '%s' ), array( '%d' ) );
-					}
-				}
 			}
 		}
 	}
