@@ -917,14 +917,35 @@
 				return is_multisite() && is_network_admin();
 			}
 
-			public function getActiveSites()
+			/**
+			 * Получает список активных сайтов
+			 * @return array|int
+			 */
+			public function getActiveSites($args = array('archived' => 0, 'mature' => 0, 'spam' => 0, 'deleted' => 0,))
 			{
-				return get_sites(array(
-					'archived' => 0,
-					'mature' => 0,
-					'spam' => 0,
-					'deleted' => 0,
-				));
+				global $wp_version;
+
+				if( version_compare($wp_version, '4.6', '>=') ) {
+					return get_sites($args);
+				} else {
+					$converted_array = array();
+
+					$sites = wp_get_sites($args);
+
+					if( empty($sites) ) {
+						return $converted_array;
+					}
+
+					foreach((array)$sites as $key => $site) {
+						$obj = new stdClass();
+						foreach($site as $attr => $value) {
+							$obj->$attr = $value;
+						}
+						$converted_array[$key] = $obj;
+					}
+
+					return $converted_array;
+				}
 			}
 
 			public function isNetworkActive()
