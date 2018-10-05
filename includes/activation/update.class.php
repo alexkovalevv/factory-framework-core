@@ -24,7 +24,7 @@
 
 			/**
 			 * Current plugin
-			 * @var Factory000_Plugin
+			 * @var Wbcr_Factory000_Plugin
 			 */
 			var $plugin;
 

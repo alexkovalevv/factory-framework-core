@@ -13,36 +13,7 @@
 	if( !defined('ABSPATH') ) {
 		exit;
 	}
-	
-	if( function_exists('wbcr_factory_000_set_lazy_redirect') ) {
-		/**
-		 * Sets a lazy redirect.
-		 *
-		 * @since 3.0.6
-		 * @return void
-		 */
-		function wbcr_factory_000_set_lazy_redirect($url)
-		{
-			update_option('wbcr_factory_000_lazy_redirect', $url);
-		}
-	}
-	
-	if( function_exists('wbcr_factory_000_do_lazy_redirect') ) {
-		function wbcr_factory_000_do_lazy_redirect()
-		{
-			$url = get_option('wbcr_factory_000_lazy_redirect', null);
-			
-			if( empty($url) ) {
-				return;
-			}
-			
-			delete_option('wbcr_factory_000_lazy_redirect');
-			wp_redirect($url);
-		}
-		
-		add_action('admin_init', 'wbcr_factory_000_do_lazy_redirect');
-	}
-	
+
 	/**
 	 * Fires functions attached to a deprecated filter hook.
 	 *
@@ -156,9 +127,7 @@
 		 *                      `WP_DEBUG` to be defined true.
 		 */
 		if( WP_DEBUG && apply_filters('deprecated_hook_trigger_error', true) ) {
-			$message = empty($message)
-				? ''
-				: ' ' . $message;
+			$message = empty($message) ? '' : ' ' . $message;
 			if( !is_null($replacement) ) {
 				trigger_error(sprintf(__('%1$s is <strong>deprecated</strong> since version %2$s! Use %3$s instead.'), $hook, $version, $replacement) . $message);
 			} else {
