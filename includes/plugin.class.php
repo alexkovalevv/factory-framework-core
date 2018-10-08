@@ -172,6 +172,76 @@
 			}
 
 			/**
+			 * Возвращает ссылку на внутреннюю страницу плагина
+			 *
+			 * @param string $page_id
+			 * @sicne: 4.0.8
+			 * @return string|void
+			 */
+			public function getPluginPageUrl($page_id, $action = null)
+			{
+				global $factory_impressive_page_menu;
+
+				if( !class_exists('Wbcr_FactoryPages000_ImpressiveThemplate') ) {
+					throw new Exception('Module pages in not installed!');
+				}
+
+				$page_result_id = sanitize_key($page_id) . '-' . sanitize_key($this->plugin_name);
+
+				$default_url = admin_url('?page=' . $page_result_id);
+
+				if( !empty($action) ) {
+					$default_url = add_query_arg('action', $action, $default_url);
+				}
+
+				if( $this->isNetworkActive() ) {
+					$default_url = network_admin_url('?page=' . $page_result_id);
+				}
+
+				if( empty($factory_impressive_page_menu) || !isset($factory_impressive_page_menu[$this->plugin_name]) ) {
+					_doing_it_wrong(__METHOD__, __('You are trying to call this earlier than the plugin menu will be registered.'), '4.0.8');
+
+					return $default_url;
+				}
+
+				$plugin_menu = $factory_impressive_page_menu[$this->plugin_name];
+
+				if( $this->isNetworkActive() ) {
+					if( isset($plugin_menu['net']) && isset($plugin_menu['net'][$page_result_id]) ) {
+						$page_url = $plugin_menu['net'][$page_result_id]['url'];
+
+						if( !empty($action) ) {
+							$page_url = add_query_arg('action', $action, $page_url);
+						}
+
+						return $page_url;
+					} else {
+						if( isset($plugin_menu['set']) && isset($plugin_menu['set'][$page_result_id]) ) {
+							_doing_it_wrong(__METHOD__, __('You are trying to get a link to a page that does not have multisite mode. Clicking this link will lead the user to a non-existent page.'), '4.0.8');
+						} else {
+							_doing_it_wrong(__METHOD__, __('Trying to get a link to an unregistered page. You are trying to call this earlier than the plugin menu will be registered.'), '4.0.8');
+						}
+
+						return $default_url;
+					}
+				} else {
+					if( isset($plugin_menu['set']) && isset($plugin_menu['set'][$page_result_id]) ) {
+						$page_url = $plugin_menu['set'][$page_result_id]['url'];
+
+						if( !empty($action) ) {
+							$page_url = add_query_arg('action', $action, $page_url);
+						}
+
+						return $page_url;
+					} else {
+						_doing_it_wrong(__METHOD__, __('You are trying to call this earlier than the plugin menu will be registered.'), '4.0.8');
+
+						return $default_url;
+					}
+				}
+			}
+
+			/**
 			 * @param Wbcr_FactoryBootstrap000_Manager $bootstrap
 			 */
 			public function setBootstap(Wbcr_FactoryBootstrap000_Manager $bootstrap)
@@ -208,7 +278,7 @@
 			 */
 			public function registerPage($class_name, $file_path)
 			{
-				if($this->isNetworkActive() && !is_network_admin()) {
+				if( $this->isNetworkActive() && !is_network_admin() ) {
 					return;
 				}
 

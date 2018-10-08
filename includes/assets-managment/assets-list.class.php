@@ -50,20 +50,6 @@
 			}
 
 			/**
-			 * Adds new items to the collection (default place).
-			 * @param mixed
-			 */
-			public function add()
-			{
-				foreach(func_get_args() as $item) {
-					$this->all[] = $item;
-					$this->default_place[] = $item;
-				}
-
-				return $this;
-			}
-
-			/**
 			 * Remove items from the collection
 			 * @return $this
 			 */
@@ -92,36 +78,6 @@
 					if( $key_inFooterPlace ) {
 						unset($this->footer_place[$key_inFooterPlace]);
 					}
-				}
-
-				return $this;
-			}
-
-			/**
-			 * Adds new items to the collection (header).
-			 * @param mixed
-			 */
-			public function addToHeader()
-			{
-
-				foreach(func_get_args() as $item) {
-					$this->all[] = $item;
-					$this->header_place[] = $item;
-				}
-
-				return $this;
-			}
-
-			/**
-			 * Adds new items to the collection (footer).
-			 * @param mixed
-			 */
-			public function addToFooter()
-			{
-
-				foreach(func_get_args() as $item) {
-					$this->all[] = $item;
-					$this->footer_place[] = $item;
 				}
 
 				return $this;
