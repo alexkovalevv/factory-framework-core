@@ -387,26 +387,24 @@
 			/**
 			 * Приведение значений опций к строгому типу данных
 			 *
-			 * @param $string
+			 * @param mixed $string
 			 * @return bool|int
 			 */
-			public function normalizeValue($string)
+			public function normalizeValue($data)
 			{
-				if( is_numeric($string) ) {
-					$number = intval($string);
+				if( is_string($data) ) {
+					$check_string = rtrim(trim($data));
 
-					if( strlen($number) != strlen($string) ) {
-						throw new Exception('Error converting data type to a number.');
+					if( $check_string == "1" || $check_string == "0" ) {
+						return intval($data);
+					} else if( $check_string === 'false' ) {
+						return false;
+					} else if( $check_string === 'true' ) {
+						return true;
 					}
-
-					return $number;
-				} else if( $string === 'false' ) {
-					return false;
-				} else if( $string === 'true' ) {
-					return true;
 				}
 
-				return $string;
+				return $data;
 			}
 
 			/**
