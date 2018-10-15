@@ -613,10 +613,10 @@
 				do_action('wbcr_factory_000_plugin_activation_' . $this->plugin_name, $this);
 
 				// just time to know when the plugin was activated the first time
-				$activated = $this->getOption('plugin_activated', 0);
+				$activated = $this->getPopulateOption('plugin_activated', 0);
 
 				if( !$activated ) {
-					$this->updateOption('plugin_activated', time());
+					$this->updatePopulateOption('plugin_activated', time());
 				}
 			}
 			

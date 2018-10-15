@@ -25,7 +25,7 @@
 					$this->$property = $value;
 				}
 
-				add_action('admin_notices', array($this, 'showNotice'));
+				add_action('admin_init', array($this, 'registerNotices'));
 			}
 
 			/**
@@ -77,7 +77,7 @@
 			public function getNoticeText()
 			{
 				$notice_text = $notice_default_text = '';
-				$notice_default_text .= '<b>' . $this->plugin_title . __('warning', '') . ':</b>' . '<br>';
+				$notice_default_text .= '<b>' . $this->plugin_title . ' ' . __('warning', '') . ':</b>' . '<br>';
 
 				$notice_default_text .= sprintf(__('The %s plugin has stopped.', 'wbcr_factory_clearfy_000'), $this->plugin_title) . ' ';
 				$notice_default_text .= __('Possible reasons:', '') . ' <br>';
@@ -101,6 +101,16 @@
 				return $notice_text;
 			}
 
+			public function registerNotices()
+			{
+				if( current_user_can('activate_plugins') && current_user_can('edit_plugins') && current_user_can('install_plugins') ) {
+					if( is_multisite() ) {
+						add_action('network_admin_notices', array($this, 'showNotice'));
+					}
+
+					add_action('admin_notices', array($this, 'showNotice'));
+				}
+			}
 
 			public function showNotice()
 			{
