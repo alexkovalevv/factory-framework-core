@@ -91,11 +91,6 @@
 			protected $plugin_url;
 
 			/**
-			 * @var bool
-			 */
-			private $is_network_active;
-
-			/**
 			 * Маркер, по умолчанию false, устанавливается true, когда все опции сети уже загружены
 			 * @var bool
 			 */
@@ -107,7 +102,13 @@
 			 */
 			private $load_options = false;
 
-			
+			/**
+			 * @since 4.0.8 - добавлена дополнительная логика
+			 *
+			 * @param string $plugin_path
+			 * @param array $data
+			 * @throws Exception
+			 */
 			public function __construct($plugin_path, $data)
 			{
 				$this->request = new Wbcr_Factory000_Request();
@@ -135,8 +136,6 @@
 				if( !function_exists('is_plugin_active_for_network') ) {
 					require_once(ABSPATH . '/wp-admin/includes/plugin.php');
 				}
-
-				$this->is_network_active = is_plugin_active_for_network($this->relative_path);
 			}
 
 			/**
@@ -150,15 +149,29 @@
 
 			/**
 			 * Активирован ли плагин для сети
+			 *
+			 * @since 4.0.8
 			 * @return bool
 			 */
 			public function isNetworkActive()
 			{
-				return $this->is_network_active;
+				$activate = is_plugin_active_for_network($this->relative_path);
+
+				if( !$activate && $this->isNetworkAdmin() && isset($_GET['action']) && $_GET['action'] == 'activate' ) {
+					$is_activate_for_network = isset($_GET['plugin_status']) && $_GET['plugin_status'] == 'all';
+
+					if( $is_activate_for_network ) {
+						return true;
+					}
+				}
+
+				return $activate;
 			}
 
 			/**
 			 * Получает список активных сайтов сети
+			 *
+			 * @since 4.0.8
 			 * @return array|int
 			 */
 			public function getActiveSites($args = array('archived' => 0, 'mature' => 0, 'spam' => 0, 'deleted' => 0))
@@ -190,6 +203,7 @@
 
 			/**
 			 * Получает все опции плагина
+			 *
 			 * @since 4.0.8
 			 * @return array
 			 */
@@ -205,7 +219,7 @@
 
 				if( !empty($result) ) {
 					foreach($result as $option) {
-						$value = maybe_unserialize($option->option_name);
+						$value = maybe_unserialize($option->option_value);
 						$value = $this->normalizeValue($value);
 
 						wp_cache_add($option->option_name, $value, $this->prefix . 'options');
@@ -260,7 +274,7 @@
 				if( $this->isNetworkActive() ) {
 					$option_value = $this->getNetworkOption($option_name, $default);
 				} else {
-					$option_value = $this->getPopulateOption($option_name, $default);
+					$option_value = $this->getOption($option_name, $default);
 				}
 
 				return apply_filters("wbcr/factory/populate_option_{$option_name}", $option_value, $option_name, $default);
@@ -478,7 +492,6 @@
 					unset($wp_object_cache->cache[$this->prefix . 'options']);
 				}
 			}
-
 
 			/**
 			 * Возвращает название опции в пространстве имен плагина
