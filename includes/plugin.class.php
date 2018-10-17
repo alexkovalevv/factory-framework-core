@@ -262,12 +262,6 @@
 			 */
 			public function setTextDomain($domain, $plugin_dir)
 			{
-				// На некоторых сайтах у пользователей была ошибка, что не существуют функции получения локали
-				// Мне ну удалось точно опредлеить, из-за это происходит, поэтому такой временный костыль
-				if(!function_exists('get_user_locale') || !function_exists('get_locale')) {
-					require_once ABSPATH . 'wp-includes/l10n.php';
-				}
-
 				$locale = apply_filters('plugin_locale', is_admin() ? get_user_locale() : get_locale(), $domain);
 
 				$mofile = $domain . '-' . $locale . '.mo';

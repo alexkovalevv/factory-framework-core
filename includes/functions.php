@@ -14,6 +14,28 @@
 		exit;
 	}
 
+	if( !function_exists('get_user_locale') ) {
+		function get_user_locale($user_id = 0)
+		{
+			$user = false;
+			if( 0 === $user_id && function_exists('wp_get_current_user') ) {
+				$user = wp_get_current_user();
+			} elseif( $user_id instanceof WP_User ) {
+				$user = $user_id;
+			} elseif( $user_id && is_numeric($user_id) ) {
+				$user = get_user_by('id', $user_id);
+			}
+
+			if( !$user ) {
+				return get_locale();
+			}
+
+			$locale = $user->locale;
+
+			return $locale ? $locale : get_locale();
+		}
+	}
+
 	/**
 	 * Fires functions attached to a deprecated filter hook.
 	 *
