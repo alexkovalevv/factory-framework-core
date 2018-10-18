@@ -243,6 +243,8 @@
 					return $wp_object_cache->cache[$this->prefix . 'network_options'];
 				}
 
+				wp_cache_add_global_groups(array($this->prefix . 'network_options'));
+
 				$network_id = (int)get_current_network_id();
 
 				$result = $wpdb->get_results("SELECT meta_key, meta_value FROM {$wpdb->sitemeta} WHERE site_id='{$network_id}' AND meta_key LIKE '{$this->prefix}%'");
