@@ -291,6 +291,8 @@
 			 */
 			public function getNetworkOption($option_name, $default = false)
 			{
+				global $wp_object_cache;
+
 				if( empty($option_name) || !is_string($option_name) ) {
 					throw new Exception('Option name must be a string and must not be empty.');
 				}
@@ -299,7 +301,7 @@
 					return $this->getOption($option_name, $default);
 				}
 
-				if( !$this->load_network_options ) {
+				if( !$this->load_network_options || !isset($wp_object_cache->cache[$this->prefix . 'network_options'])) {
 					$this->getAllNetworkOptions();
 					$this->load_network_options = true;
 				}
@@ -334,11 +336,13 @@
 			 */
 			public function getOption($option_name, $default = false)
 			{
+				global $wp_object_cache;
+
 				if( empty($option_name) || !is_string($option_name) ) {
 					throw new Exception('Option name must be a string and must not be empty.');
 				}
 
-				if( !$this->load_options ) {
+				if( !$this->load_options || !isset($wp_object_cache->cache[$this->prefix . 'options'])) {
 					$this->getAllOptions();
 					$this->load_options = true;
 				}
