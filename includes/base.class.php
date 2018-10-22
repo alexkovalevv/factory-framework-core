@@ -217,6 +217,8 @@
 
 				$result = $wpdb->get_results("SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE '{$this->prefix}%'");
 
+				$options = array();
+
 				if( !empty($result) ) {
 					foreach($result as $option) {
 						$value = maybe_unserialize($option->option_value);
@@ -224,9 +226,11 @@
 
 						wp_cache_add($option->option_name, $value, $this->prefix . 'options');
 					}
+
+					$options = $wp_object_cache->cache[$this->prefix . 'options'];
 				}
 
-				return apply_filters('wbcr/factory/all_options', $wp_object_cache->cache[$this->prefix . 'options'], $this->plugin_name);
+				return apply_filters('wbcr/factory/all_options', $options, $this->plugin_name);
 			}
 
 			/**
@@ -249,6 +253,8 @@
 
 				$result = $wpdb->get_results("SELECT meta_key, meta_value FROM {$wpdb->sitemeta} WHERE site_id='{$network_id}' AND meta_key LIKE '{$this->prefix}%'");
 
+				$options = array();
+
 				if( !empty($result) ) {
 					foreach($result as $option) {
 						$value = maybe_unserialize($option->meta_value);
@@ -257,9 +263,11 @@
 						$cache_key = $network_id . ":" . $option->meta_key;
 						wp_cache_add($cache_key, $value, $this->prefix . 'network_options');
 					}
+
+					$options = $wp_object_cache->cache[$this->prefix . 'network_options'];
 				}
 
-				return apply_filters('wbcr/factory/all_network_options', $wp_object_cache->cache[$this->prefix . 'network_options'], $this->plugin_name, $network_id);
+				return apply_filters('wbcr/factory/all_network_options', $options, $this->plugin_name, $network_id);
 			}
 
 			/**
@@ -301,7 +309,7 @@
 					return $this->getOption($option_name, $default);
 				}
 
-				if( !$this->load_network_options || !isset($wp_object_cache->cache[$this->prefix . 'network_options'])) {
+				if( !$this->load_network_options || !isset($wp_object_cache->cache[$this->prefix . 'network_options']) ) {
 					$this->getAllNetworkOptions();
 					$this->load_network_options = true;
 				}
@@ -342,7 +350,7 @@
 					throw new Exception('Option name must be a string and must not be empty.');
 				}
 
-				if( !$this->load_options || !isset($wp_object_cache->cache[$this->prefix . 'options'])) {
+				if( !$this->load_options || !isset($wp_object_cache->cache[$this->prefix . 'options']) ) {
 					$this->getAllOptions();
 					$this->load_options = true;
 				}
