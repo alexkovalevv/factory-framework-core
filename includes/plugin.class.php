@@ -206,38 +206,18 @@
 
 				$plugin_menu = $factory_impressive_page_menu[$this->plugin_name];
 
-				if( $this->isNetworkActive() ) {
-					if( isset($plugin_menu['net']) && isset($plugin_menu['net'][$page_result_id]) ) {
-						$page_url = $plugin_menu['net'][$page_result_id]['url'];
+				if( !empty($plugin_menu) && isset($plugin_menu[$page_result_id]) ) {
+					$page_url = $plugin_menu[$page_result_id]['url'];
 
-						if( !empty($action) ) {
-							$page_url = add_query_arg('action', $action, $page_url);
-						}
-
-						return $page_url;
-					} else {
-						if( isset($plugin_menu['set']) && isset($plugin_menu['set'][$page_result_id]) ) {
-							_doing_it_wrong(__METHOD__, __('You are trying to get a link to a page that does not have multisite mode. Clicking this link will lead the user to a non-existent page.'), '4.0.8');
-						} else {
-							_doing_it_wrong(__METHOD__, __('Trying to get a link to an unregistered page. You are trying to call this earlier than the plugin menu will be registered.'), '4.0.8');
-						}
-
-						return $default_url;
+					if( !empty($action) ) {
+						$page_url = add_query_arg('action', $action, $page_url);
 					}
+
+					return $page_url;
 				} else {
-					if( isset($plugin_menu['set']) && isset($plugin_menu['set'][$page_result_id]) ) {
-						$page_url = $plugin_menu['set'][$page_result_id]['url'];
+					_doing_it_wrong(__METHOD__, __('You are trying to call this earlier than the plugin menu will be registered.'), '4.0.8');
 
-						if( !empty($action) ) {
-							$page_url = add_query_arg('action', $action, $page_url);
-						}
-
-						return $page_url;
-					} else {
-						_doing_it_wrong(__METHOD__, __('You are trying to call this earlier than the plugin menu will be registered.'), '4.0.8');
-
-						return $default_url;
-					}
+					return $default_url;
 				}
 			}
 
