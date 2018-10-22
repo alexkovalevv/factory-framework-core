@@ -9,8 +9,8 @@
 	 * @since 4.0.8
 	 */
 
-	if( !class_exists('Wbcr_Factory000_Compatibility') ) {
-		class Wbcr_Factory000_Compatibility {
+	if( !class_exists('Wbcr_Factory_Compatibility') ) {
+		class Wbcr_Factory_Compatibility {
 
 			protected $plugin_prefix;
 			protected $plugin_class_prefix;
