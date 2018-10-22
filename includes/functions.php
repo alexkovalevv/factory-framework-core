@@ -158,3 +158,54 @@
 		}
 	}
 
+
+    if(!function_exists('_sanitize_text_fields')){
+        function _sanitize_text_fields( $str, $keep_newlines = false ) {
+            $filtered = wp_check_invalid_utf8( $str );
+
+            if ( strpos($filtered, '<') !== false ) {
+                $filtered = wp_pre_kses_less_than( $filtered );
+                // This will strip extra whitespace for us.
+                $filtered = wp_strip_all_tags( $filtered, false );
+
+                // Use html entities in a special case to make sure no later
+                // newline stripping stage could lead to a functional tag
+                $filtered = str_replace("<\n", "&lt;\n", $filtered);
+            }
+
+            if ( ! $keep_newlines ) {
+                $filtered = preg_replace( '/[\r\n\t ]+/', ' ', $filtered );
+            }
+            $filtered = trim( $filtered );
+
+            $found = false;
+            while ( preg_match('/%[a-f0-9]{2}/i', $filtered, $match) ) {
+                $filtered = str_replace($match[0], '', $filtered);
+                $found = true;
+            }
+
+            if ( $found ) {
+                // Strip out the whitespace that may now exist after removing the octets.
+                $filtered = trim( preg_replace('/ +/', ' ', $filtered) );
+            }
+
+            return $filtered;
+        }
+
+    }
+
+    if(!function_exists('sanitize_textarea_field')){
+        function sanitize_textarea_field( $str ) {
+            $filtered = _sanitize_text_fields( $str, true );
+
+            /**
+             * Filters a sanitized textarea field string.
+             *
+             * @since 4.7.0
+             *
+             * @param string $filtered The sanitized string.
+             * @param string $str      The string prior to being sanitized.
+             */
+            return apply_filters( 'sanitize_textarea_field', $filtered, $str );
+        }
+    }
