@@ -178,47 +178,19 @@
 			 * @sicne: 4.0.8
 			 * @return string|void
 			 */
-			public function getPluginPageUrl($page_id, $action = null)
+			public function getPluginPageUrl($page_id, $args = array())
 			{
-				global $factory_impressive_page_menu;
-
-				if( !class_exists('Wbcr_FactoryPages000_ImpressiveThemplate') ) {
-					throw new Exception('Module pages in not installed!');
+				if( !class_exists('Wbcr_FactoryPages000') ) {
+					throw new Exception('The factory_pages_000 module is not included.');
 				}
 
-				$page_result_id = sanitize_key($page_id) . '-' . sanitize_key($this->plugin_name);
+				if( !is_admin() ) {
+					_doing_it_wrong(__METHOD__, __('You cannot use this feature on the frontend.'), '4.0.8');
 
-				$default_url = admin_url('?page=' . $page_result_id);
-
-				if( !empty($action) ) {
-					$default_url = add_query_arg('action', $action, $default_url);
+					return null;
 				}
 
-				if( $this->isNetworkActive() ) {
-					$default_url = network_admin_url('?page=' . $page_result_id);
-				}
-
-				if( empty($factory_impressive_page_menu) || !isset($factory_impressive_page_menu[$this->plugin_name]) ) {
-					_doing_it_wrong(__METHOD__, __('You are trying to call this earlier than the plugin menu will be registered.'), '4.0.8');
-
-					return $default_url;
-				}
-
-				$plugin_menu = $factory_impressive_page_menu[$this->plugin_name];
-
-				if( !empty($plugin_menu) && isset($plugin_menu[$page_result_id]) ) {
-					$page_url = $plugin_menu[$page_result_id]['url'];
-
-					if( !empty($action) ) {
-						$page_url = add_query_arg('action', $action, $page_url);
-					}
-
-					return $page_url;
-				} else {
-					_doing_it_wrong(__METHOD__, __('You are trying to call this earlier than the plugin menu will be registered.'), '4.0.8');
-
-					return $default_url;
-				}
+				return Wbcr_FactoryPages000::getPageUrl($this, $page_id, $args);
 			}
 
 			/**
