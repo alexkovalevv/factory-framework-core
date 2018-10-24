@@ -19,7 +19,7 @@
 	}
 	define('FACTORY_000_LOADED', true);
 
-	define('FACTORY_000_VERSION', '4.0.8');
+	define('FACTORY_000_VERSION', '4.0.9');
 
 	define('FACTORY_000_DIR', dirname(__FILE__));
 	define('FACTORY_000_URL', plugins_url(null, __FILE__));
