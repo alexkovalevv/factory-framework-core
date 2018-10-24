@@ -114,13 +114,13 @@
 
 			public function showNotice()
 			{
-				$notice_text = $this->getNoticeText();
+				$notice_text = '<p>' . $this->getNoticeText() . '</p>';
 
 				if( empty($notice_text) ) {
 					return;
 				}
 
-				echo '<div class="notice notice-error"><p>' . $notice_text . '</p></div>';
+				echo '<div class="notice notice-error">' . apply_filters('wbcr/factory/check_compatibility/notice_text', $notice_text, $this->plugin_name) . '</div>';
 			}
 		}
 	}
