@@ -32,16 +32,28 @@ load_plugin_textdomain( 'wbcr_factory_000', false, dirname( plugin_basename( __F
 
 #comp merge
 require_once( FACTORY_000_DIR . '/includes/functions.php' );
-require_once( FACTORY_000_DIR . '/includes/class-requests.php' );
-require_once( FACTORY_000_DIR . '/includes/class-options.php' );
-require_once( FACTORY_000_DIR . '/includes/class-base.php' );
+require_once( FACTORY_000_DIR . '/includes/class-factory-requests.php' );
+require_once( FACTORY_000_DIR . '/includes/class-factory-options.php' );
+require_once( FACTORY_000_DIR . '/includes/class-factory-plugin-base.php' );
+require_once( FACTORY_000_DIR . '/includes/class-factory-migrations.php' );
+require_once( FACTORY_000_DIR . '/includes/class-factory-notices.php' );
 
-require_once( FACTORY_000_DIR . '/includes/assets-managment/assets-list.class.php' );
-require_once( FACTORY_000_DIR . '/includes/assets-managment/script-list.class.php' );
-require_once( FACTORY_000_DIR . '/includes/assets-managment/style-list.class.php' );
+// ASSETS
+require_once( FACTORY_000_DIR . '/includes/assets-managment/class-factory-assets-list.php' );
+require_once( FACTORY_000_DIR . '/includes/assets-managment/class-factory-script-list.php' );
+require_once( FACTORY_000_DIR . '/includes/assets-managment/class-factory-style-list.php' );
 
-require_once( FACTORY_000_DIR . '/includes/class-plugin-abstract.php' );
+// PREMIUM
+require_once( FACTORY_000_DIR . '/includes/premium/license/class-factory-provider-abstract.php' );
+require_once( FACTORY_000_DIR . '/includes/premium/class-factory-manager.php' );
 
-require_once( FACTORY_000_DIR . '/includes/activation/activator.class.php' );
-require_once( FACTORY_000_DIR . '/includes/activation/update.class.php' );
+// UPDATES
+require_once( FACTORY_000_DIR . '/includes/updates/repositories/class-factory-repository-abstract.php' );
+require_once( FACTORY_000_DIR . '/includes/updates/repositories/class-factory-wordpress.php' );
+require_once( FACTORY_000_DIR . '/includes/updates/class-factory-manager.php' );
+
+require_once( FACTORY_000_DIR . '/includes/class-factory-plugin-abstract.php' );
+
+require_once( FACTORY_000_DIR . '/includes/activation/class-factory-activator.php' );
+require_once( FACTORY_000_DIR . '/includes/activation/class-factory-update.php' );
 #endcomp

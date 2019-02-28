@@ -24,6 +24,11 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		public $request;
 		
 		/**
+		 * @var Wbcr_FactoryLicense000_Base
+		 */
+		public $premium;
+		
+		/**
 		 * The Bootstrap Manager class
 		 *
 		 * @var Wbcr_FactoryBootstrap000_Manager
@@ -36,12 +41,6 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		 * @var Wbcr_FactoryForms000_Manager
 		 */
 		public $forms;
-		
-		/**
-		 *
-		 * @var Wbcr_FactoryLicense000_Base
-		 */
-		public $license_manager;
 		
 		/**
 		 * A class name of an activator to activate the plugin.
@@ -88,6 +87,9 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			// INIT PLUGIN MIGRATIONS
 			$this->init_plugin_migrations();
 			
+			// INIT PLUGIN NOTICES
+			$this->init_plugin_notices();
+			
 			// INIT PLUGIN PREMIUM FEATURES
 			// License manager should be installed earlier
 			// so that other modules can access it.
@@ -100,28 +102,8 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			$this->register_plugin_hooks();
 		}
 		
-		/**
-		 * Возвращает ссылку на внутреннюю страницу плагина
-		 *
-		 * @param string $page_id
-		 *
-		 * @sicne: 4.0.8
-		 * @return string|void
-		 * @throws Exception
-		 */
-		public function getPluginPageUrl( $page_id, $args = array() ) {
-			if ( ! class_exists( 'Wbcr_FactoryPages000' ) ) {
-				throw new Exception( 'The factory_pages_000 module is not included.' );
-			}
-			
-			if ( ! is_admin() ) {
-				_doing_it_wrong( __METHOD__, __( 'You cannot use this feature on the frontend.' ), '4.0.8' );
-				
-				return null;
-			}
-			
-			return Wbcr_FactoryPages000::getPageUrl( $this, $page_id, $args );
-		}
+		/* Services region
+		/* -------------------------------------------------------------*/
 		
 		/**
 		 * @param Wbcr_FactoryBootstrap000_Manager $bootstrap
@@ -204,38 +186,91 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		}
 		
 		/**
-		 * Загружает специальные модули для расширения Factory фреймворка.
-		 * Разработчик плагина сам выбирает, какие модули ему нужны для
-		 * создания плагина.
+		 * Registers a class to activate the plugin.
 		 *
-		 * Модули фреймворка хранятся в libs/factory/framework
+		 * @since 1.0.0
 		 *
-		 * @throws Exception
+		 * @param string $className class name of the plugin activator.
+		 *
 		 * @return void
 		 */
-		protected function init_framework_modules() {
-			if ( ! empty( $this->load_factory_modules ) ) {
-				foreach ( (array) $this->load_factory_modules as $module ) {
-					$scope = isset( $module[2] ) ? $module[2] : 'all';
-					
-					if ( $scope == 'all' || ( is_admin() && $scope == 'admin' ) || ( ! is_admin() && $scope == 'public' ) ) {
-						
-						if ( ! file_exists( $this->plugin_root . '/' . $module[0] . '/boot.php' ) ) {
-							throw new Exception( 'Module ' . $module[1] . ' is not included.' );
-						}
-						
-						$module_boot_file = $this->plugin_root . '/' . $module[0] . '/boot.php';
-						require_once $module_boot_file;
-						
-						$this->loaded_factory_modules[ $module[1] ] = $module_boot_file;
-						
-						do_action( 'wbcr_' . $module[1] . '_plugin_created', $this );
-					}
-				}
+		public function registerActivation( $className ) {
+			$this->activator_class[] = $className;
+		}
+		
+		/* end services region
+		/* -------------------------------------------------------------*/
+		
+		/**
+		 * It's invoked on plugin activation. Don't excite it directly.
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public function activation_hook() {
+			
+			/**
+			 * @since 4.1.1 - change  hook name
+			 */
+			if ( apply_filters( "wbcr/factory_000/cancel_plugin_activation_{$this->plugin_name}", false ) ) {
+				return;
 			}
 			
-			do_action( 'wbcr_factory_000_core_modules_loaded-' . $this->plugin_name );
+			/**
+			 * @since 4.1.1 - deprecated
+			 */
+			wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_activation', array(
+				$this
+			), '4.1.1', "wbcr/factory/plugin_activation" );
+			
+			/**
+			 * @since 4.1.1 - added
+			 */
+			do_action( 'wbcr/factory/plugin_activation', $this->plugin_name );
+			
+			/**
+			 * @since 4.1.1 - deprecated
+			 */
+			wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_activation_' . $this->plugin_name, array(
+				$this
+			), '4.1.1', "wbcr/factory/plugin_{$this->plugin_name}_activation" );
+			
+			/**
+			 * @since 4.1.1 - added
+			 */
+			do_action( "wbcr/factory/plugin_{$this->plugin_name}_activation" );
+			
+			if ( ! empty( $this->activator_class ) ) {
+				foreach ( (array) $this->activator_class as $activator_class ) {
+					$activator = new $activator_class( $this );
+					$activator->activate();
+				}
+			}
 		}
+		
+		/**
+		 * Возвращает ссылку на внутреннюю страницу плагина
+		 *
+		 * @param string $page_id
+		 *
+		 * @sicne: 4.0.8
+		 * @return string|void
+		 * @throws Exception
+		 */
+		public function getPluginPageUrl( $page_id, $args = array() ) {
+			if ( ! class_exists( 'Wbcr_FactoryPages000' ) ) {
+				throw new Exception( 'The factory_pages_000 module is not included.' );
+			}
+			
+			if ( ! is_admin() ) {
+				_doing_it_wrong( __METHOD__, __( 'You cannot use this feature on the frontend.' ), '4.0.8' );
+				
+				return null;
+			}
+			
+			return Wbcr_FactoryPages000::getPageUrl( $this, $page_id, $args );
+		}
+		
 		
 		/**
 		 * Загружает аддоны для плагина, как часть проекта, а не как отдельный плагин
@@ -285,17 +320,48 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		}
 		
 		/**
-		 * Registers a class to activate the plugin.
+		 * Загружает специальные модули для расширения Factory фреймворка.
+		 * Разработчик плагина сам выбирает, какие модули ему нужны для
+		 * создания плагина.
 		 *
-		 * @since 1.0.0
+		 * Модули фреймворка хранятся в libs/factory/framework
 		 *
-		 * @param string $className class name of the plugin activator.
-		 *
+		 * @throws Exception
 		 * @return void
 		 */
-		public function registerActivation( $className ) {
-			$this->activator_class[] = $className;
+		private function init_framework_modules() {
+			
+			if ( ! empty( $this->load_factory_modules ) ) {
+				foreach ( (array) $this->load_factory_modules as $module ) {
+					$scope = isset( $module[2] ) ? $module[2] : 'all';
+					
+					if ( $scope == 'all' || ( is_admin() && $scope == 'admin' ) || ( ! is_admin() && $scope == 'public' ) ) {
+						
+						if ( ! file_exists( $this->plugin_root . '/' . $module[0] . '/boot.php' ) ) {
+							throw new Exception( 'Module ' . $module[1] . ' is not included.' );
+						}
+						
+						$module_boot_file = $this->plugin_root . '/' . $module[0] . '/boot.php';
+						require_once $module_boot_file;
+						
+						$this->loaded_factory_modules[ $module[1] ] = $module_boot_file;
+						
+						do_action( 'wbcr_' . $module[1] . '_plugin_created', $this );
+					}
+				}
+			}
+			
+			/**
+			 * @since 4.1.1 - deprecated
+			 */
+			wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, array(), '4.1.1', "wbcr/factory/plugin_activation" );
+			
+			/**
+			 * @since 4.1.1 - add
+			 */
+			do_action( 'wbcr/factory_000/modules_loaded-' . $this->plugin_name );
 		}
+		
 		
 		/**
 		 * Setups actions related with the Factory Plugin.
@@ -312,53 +378,6 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			if ( is_admin() ) {
 				register_activation_hook( $this->main_file, array( $this, 'activation_hook' ) );
 				register_deactivation_hook( $this->main_file, array( $this, 'deactivation_hook' ) );
-			}
-		}
-		
-		/**
-		 * It's invoked on plugin activation. Don't excite it directly.
-		 *
-		 * @since 1.0.0
-		 * @return void
-		 */
-		public function activation_hook() {
-			
-			/**
-			 * @since 4.1.1 - change  hook name
-			 */
-			if ( apply_filters( "wbcr/factory_000/cancel_plugin_activation_{$this->plugin_name}", false ) ) {
-				return;
-			}
-			
-			/**
-			 * @since 4.1.1 - deprecated
-			 */
-			wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_activation', array(
-				$this
-			), '4.0.9', "wbcr/factory/plugin_activation" );
-			
-			/**
-			 * @since 4.1.1 - added
-			 */
-			do_action( 'wbcr/factory/plugin_activation', $this->plugin_name );
-			
-			/**
-			 * @since 4.1.1 - deprecated
-			 */
-			wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_activation_' . $this->plugin_name, array(
-				$this
-			), '4.0.9', "wbcr/factory/plugin_{$this->plugin_name}_activation" );
-			
-			/**
-			 * @since 4.1.1 - added
-			 */
-			do_action( "wbcr/factory/plugin_{$this->plugin_name}_activation" );
-			
-			if ( ! empty( $this->activator_class ) ) {
-				foreach ( (array) $this->activator_class as $activator_class ) {
-					$activator = new $activator_class( $this );
-					$activator->activate();
-				}
 			}
 		}
 		
@@ -382,7 +401,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			 */
 			wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_deactivation', array(
 				$this
-			), '4.0.9', "wbcr/factory/plugin_deactivation" );
+			), '4.1.1', "wbcr/factory/plugin_deactivation" );
 			
 			/**
 			 * @since 4.1.1 - added
@@ -394,7 +413,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			 */
 			wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_deactivation_' . $this->plugin_name, array(
 				$this
-			), '4.0.9', "wbcr/factory/plugin_{$this->plugin_name}_deactivation" );
+			), '4.1.1', "wbcr/factory/plugin_{$this->plugin_name}_deactivation" );
 			
 			/**
 			 * @since 4.1.1 - added
@@ -409,23 +428,25 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			}
 		}
 		
-		
 		/**
+		 * Инициализируем миграции плагина
+		 *
 		 * @since 4.1.1
 		 * @throws Exception
+		 * @return void
 		 */
 		protected function init_plugin_migrations() {
-			try {
-				$this->modules_dependent( 'factory_notices_000' );
-			} catch( Exception $e ) {
-				throw new Exception( $e->getMessage() );
-			}
-			
-			require_once( FACTORY_000_DIR . '/includes/class-migrations.php' );
-			
 			new WBCR\Factory_000\Migrations( $this );
 		}
 		
+		/**
+		 * Инициализируем уведомления плагина
+		 * @since 4.1.1
+		 * @return void
+		 */
+		protected function init_plugin_notices() {
+			new Wbcr\Factory_000\Notices();
+		}
 		
 		/**
 		 * Создает нового рабочего для проверки обновлений и апгрейда текущего плагина.         *
@@ -438,22 +459,9 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		 * @return void
 		 */
 		protected function init_plugin_updates() {
-			
-			if ( ! is_array( $this->updates ) ) {
-				throw new Exception( 'Starting with version 4.1.1 of the Core for Factory framework module, you must use the updates class property to install the plugin update configuration. Now, to specify where the plugin migration is stored, you must set the path for the migrations property.' );
+			if ( ! empty( $this->plugin_updates ) ) {
+				new WBCR\Factory_000\Updates\Manager( $this, $this->plugin_updates );
 			}
-			
-			if ( ! isset( $this->updates['free'] ) ) {
-				return;
-			}
-			
-			try {
-				$this->modules_dependent( array( 'factory_updates_000', 'factory_notices_000' ) );
-			} catch( Exception $e ) {
-				throw new Exception( $e->getMessage() );
-			}
-			
-			new WBCR\Factory_Updates_000\Worker( $this, $this->updates['free'] );
 		}
 		
 		/**
@@ -467,35 +475,13 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		 * @throws Exception
 		 */
 		protected function init_plugin_premium_features() {
-			if ( empty( $this->licensing ) ) {
+			if ( ! $this->has_premium ) {
+				$this->premium = null;
+				
 				return;
 			}
 			
-			try {
-				$this->modules_dependent( array(
-					'factory_updates_000',
-					'factory_license_000',
-					'factory_notices_000'
-				) );
-			} catch( Exception $e ) {
-				throw new Exception( $e->getMessage() );
-			}
-			
-			$parsed_args = wp_parse_args( $this->licensing, array(
-				'freemius_plugin_id'  => null,
-				'freemius_public_key' => null,
-				'slug'                => null
-			) );
-			
-			$plugin_id  = $parsed_args['freemius_plugin_id'];
-			$public_key = $parsed_args['freemius_public_key'];
-			$slug       = $parsed_args['slug'];
-			
-			$this->license_manager = new Wbcr_FactoryLicense000_Base( $this, $plugin_id, $public_key, $slug );
-			
-			if ( isset( $this->updates['premium'] ) ) {
-				new WBCR\Factory_Updates_000\Worker( $this, $this->updates['premium'] );
-			}
+			$this->premium = new WBCR\Factory_000\Premium\Manager( $this, $this->license_provider_settings );
 		}
 		
 		/**
@@ -505,7 +491,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		 *
 		 * @throws Exception
 		 */
-		protected function modules_dependent( $dependents ) {
+		/*protected function modules_dependent( $dependents ) {
 			$modules = array();
 			
 			if ( is_array( $dependents ) ) {
@@ -521,7 +507,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			if ( ! empty( $modules ) ) {
 				throw new Exception( "Error in factory framework. Your plugin configuration requires include of additional framework modules: " . implode( ',', $modules ) . "." );
 			}
-		}
+		}*/
 		
 		// ----------------------------------------------------------------------
 		// Public methods

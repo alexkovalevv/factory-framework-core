@@ -86,44 +86,60 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 		 */
 		protected $plugin_url;
 		
+		
 		/**
 		 * Optional. Settings for plugin updates from a remote repository.
 		 *
 		 * @var array {
-		 *      {type} array free {
-		 *           Update settings for free plugin.
 		 *
-		 *           {type} string repository    Type where we download plugin updates
+		 *    Update settings for free plugin.
+		 *
+		 *    {type} string repository    Type where we download plugin updates
 		 *                                       (wordpress | freemius | other)
 		 *
-		 *           {type} string slug          Plugin slug
+		 *    {type} string slug          Plugin slug
 		 *
-		 *           {type} array rollback       Settings for rollback to the previous version of
+		 *    {type} array rollback       Settings for rollback to the previous version of
 		 *                                       the plugin, will gain only one option prev_stable_version,
-		 *                                       you must specify previous version of the plugin
-		 *      }
-		 *     {type} array premium {
-		 *          Update settings for premium plugin.
-		 *
-		 *          Settings is inherited from free attribute.
-		 *     }
+		 *                                       you must specify previous version of the plugin         *
 		 * }
 		 */
-		protected $updates = array();
+		protected $updates_provider = array();
 		
+		/**
+		 * Does plugin have a premium version?
+		 *
+		 * @var bool
+		 */
+		protected $has_premium = false;
+		
+		/**
+		 * Store where premium plugin was sold (freemius | codecanyon | template_monster)
+		 * By default: freemius
+		 *
+		 * @var string
+		 */
+		protected $license_provider = 'freemius';
 		
 		/**
 		 * Optional. Settings for download, update and upgrage to premium of the plugin.
 		 *
 		 * @var array {
-		 *      {type} string license_server License server type freemius | webcraftic
-		 *      {type} string store          Store where freemius plugin was sold | codecanyon | template_monster         *
-		 *      {type} string plugin_id      Plugin id, only for freemius
-		 *      {type} string public_key     Plugin public key, only for freemius
-		 *      {type} string slug           Plugin name, only for freemius         *
+		 *      {type} string license_provider            Store where premium plugin was sold (freemius | codecanyon | template_monster)
+		 *      {type} string plugin_id                   Plugin id, only for freemius
+		 *      {type} string public_key                  Plugin public key, only for freemius
+		 *      {type} string slug                        Plugin name, only for freemius
+		 *
+		 *      {type} array  premium_plugin_updates {
+		 *              Update settings for free plugin.
+		 *
+		 *              {type} array rollback             Settings for rollback to the previous version of
+		 *                                                the plugin, will gain only one option prev_stable_version,
+		 *                                                you must specify previous version of the plugin         *
+		 *      }
 		 * }
 		 */
-		protected $licensing = array();
+		protected $license_provider_settings = array();
 		
 		/**
 		 * Required. Framework modules needed to develop a plugin.
@@ -178,6 +194,10 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 			
 			// used only in the module 'updates'
 			$this->plugin_slug = ! empty( $this->plugin_name ) ? $this->plugin_name : basename( $plugin_path );
+		}
+		
+		public function has_premium() {
+			return $this->has_premium;
 		}
 		
 		/**
