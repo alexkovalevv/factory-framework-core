@@ -24,7 +24,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		public $request;
 		
 		/**
-		 * @var Wbcr_FactoryLicense000_Base
+		 * @var \WBCR\Factory_000\Premium\Provider
 		 */
 		public $premium;
 		
@@ -313,7 +313,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 					
 					// Создаем экземпляр класса аддона и записываем его в список загруженных аддонов
 					if ( class_exists( $addon_path[0] ) ) {
-						$this->plugin_addons[ $addon_name ] = new $addon_path[0]( $this->main_file, $plugin_data );
+						$this->plugin_addons[ $addon_name ] = new $addon_path[0]( $this->get_paths()->main_file, $plugin_data );
 					}
 				}
 			}
@@ -337,11 +337,11 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 					
 					if ( $scope == 'all' || ( is_admin() && $scope == 'admin' ) || ( ! is_admin() && $scope == 'public' ) ) {
 						
-						if ( ! file_exists( $this->plugin_root . '/' . $module[0] . '/boot.php' ) ) {
+						if ( ! file_exists( $this->get_paths()->absolute . '/' . $module[0] . '/boot.php' ) ) {
 							throw new Exception( 'Module ' . $module[1] . ' is not included.' );
 						}
 						
-						$module_boot_file = $this->plugin_root . '/' . $module[0] . '/boot.php';
+						$module_boot_file = $this->get_paths()->absolute . '/' . $module[0] . '/boot.php';
 						require_once $module_boot_file;
 						
 						$this->loaded_factory_modules[ $module[1] ] = $module_boot_file;
@@ -376,8 +376,8 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			
 			// register activation hooks
 			if ( is_admin() ) {
-				register_activation_hook( $this->main_file, array( $this, 'activation_hook' ) );
-				register_deactivation_hook( $this->main_file, array( $this, 'deactivation_hook' ) );
+				register_activation_hook( $this->get_paths()->main_file, array( $this, 'activation_hook' ) );
+				register_deactivation_hook( $this->get_paths()->main_file, array( $this, 'deactivation_hook' ) );
 			}
 		}
 		
@@ -459,8 +459,8 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		 * @return void
 		 */
 		protected function init_plugin_updates() {
-			if ( ! empty( $this->plugin_updates ) ) {
-				new WBCR\Factory_000\Updates\Manager( $this, $this->plugin_updates );
+			if ( ! empty( $this->updates_settings ) ) {
+				new WBCR\Factory_000\Updates\Manager( $this, $this->updates_settings );
 			}
 		}
 		
@@ -481,7 +481,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 				return;
 			}
 			
-			$this->premium = new WBCR\Factory_000\Premium\Manager( $this, $this->license_provider_settings );
+			$this->premium = WBCR\Factory_000\Premium\Manager::instance( $this, $this->license_settings );
 		}
 		
 		/**

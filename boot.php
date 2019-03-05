@@ -27,11 +27,15 @@ define( 'FACTORY_000_URL', plugins_url( null, __FILE__ ) );
 load_plugin_textdomain( 'wbcr_factory_000', false, dirname( plugin_basename( __FILE__ ) ) . '/langs' );
 
 /*if ( ! class_exists( 'WBCR\Factory000\Options' ) ) {
-
+	// todo: предотвратить подключение файлов, если модуль уже загружен
 }*/
 
 #comp merge
 require_once( FACTORY_000_DIR . '/includes/functions.php' );
+
+require_once( FACTORY_000_DIR . '/includes/entities/class-factory-paths.php' );
+require_once( FACTORY_000_DIR . '/includes/entities/class-factory-support.php' );
+
 require_once( FACTORY_000_DIR . '/includes/class-factory-requests.php' );
 require_once( FACTORY_000_DIR . '/includes/class-factory-options.php' );
 require_once( FACTORY_000_DIR . '/includes/class-factory-plugin-base.php' );
@@ -44,7 +48,8 @@ require_once( FACTORY_000_DIR . '/includes/assets-managment/class-factory-script
 require_once( FACTORY_000_DIR . '/includes/assets-managment/class-factory-style-list.php' );
 
 // PREMIUM
-require_once( FACTORY_000_DIR . '/includes/premium/license/class-factory-provider-abstract.php' );
+require_once( FACTORY_000_DIR . '/includes/premium/class-factory-license-interface.php' );
+require_once( FACTORY_000_DIR . '/includes/premium/class-factory-provider-abstract.php' );
 require_once( FACTORY_000_DIR . '/includes/premium/class-factory-manager.php' );
 
 // UPDATES

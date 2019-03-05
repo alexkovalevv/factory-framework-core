@@ -47,45 +47,20 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 		protected $plugin_version;
 		
 		/**
-		 * Type of assembly plugin. Possible options: free, premium, trial
-		 *
+		 * @since 4.1.1
 		 * @var string
 		 */
-		protected $plugin_build;
+		protected $plugin_text_domain;
 		
 		/**
-		 * @var string
+		 * @var array
 		 */
-		protected $plugin_assembly;
+		protected $support_details;
 		
 		/**
-		 * Absolute path to the main file of the plugin.
-		 *
-		 * @var string
+		 * @var bool
 		 */
-		protected $main_file;
-		
-		/**
-		 * Absolute path to plugin directory
-		 *
-		 * @var string
-		 */
-		protected $plugin_root;
-		
-		/**
-		 * Relative path to plugin directory
-		 *
-		 * @var string
-		 */
-		protected $relative_path;
-		
-		/**
-		 * Link to the plugin directory
-		 *
-		 * @var string
-		 */
-		protected $plugin_url;
-		
+		protected $has_updates = false;
 		
 		/**
 		 * Optional. Settings for plugin updates from a remote repository.
@@ -94,17 +69,17 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 		 *
 		 *    Update settings for free plugin.
 		 *
-		 *    {type} string repository    Type where we download plugin updates
-		 *                                       (wordpress | freemius | other)
+		 *    {type} string repository          Type where we download plugin updates
+		 *                                      (wordpress | freemius | other)
 		 *
-		 *    {type} string slug          Plugin slug
+		 *    {type} string slug                Plugin slug
 		 *
-		 *    {type} array rollback       Settings for rollback to the previous version of
-		 *                                       the plugin, will gain only one option prev_stable_version,
-		 *                                       you must specify previous version of the plugin         *
+		 *    {type} array rollback             Settings for rollback to the previous version of
+		 *                                      the plugin, will gain only one option prev_stable_version,
+		 *                                      you must specify previous version of the plugin         *
 		 * }
 		 */
-		protected $updates_provider = array();
+		protected $updates_settings = array();
 		
 		/**
 		 * Does plugin have a premium version?
@@ -112,14 +87,6 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 		 * @var bool
 		 */
 		protected $has_premium = false;
-		
-		/**
-		 * Store where premium plugin was sold (freemius | codecanyon | template_monster)
-		 * By default: freemius
-		 *
-		 * @var string
-		 */
-		protected $license_provider = 'freemius';
 		
 		/**
 		 * Optional. Settings for download, update and upgrage to premium of the plugin.
@@ -139,7 +106,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 		 *      }
 		 * }
 		 */
-		protected $license_provider_settings = array();
+		protected $license_settings = array();
 		
 		/**
 		 * Required. Framework modules needed to develop a plugin.
@@ -160,20 +127,39 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 			array( 'libs/factory/pages', 'factory_pages_000', 'admin' ),
 		);
 		
+		
+		/**
+		 * @var \WBCR\Factory_000\Entities\Support
+		 */
+		protected $support;
+		
+		/**
+		 * @var \WBCR\Factory_000\Entities\Paths
+		 */
+		protected $paths;
+		
+		/**
+		 * @var string
+		 */
+		private $plugin_file;
+		
 		/**
 		 * @var array
 		 */
 		private $plugin_data;
 		
 		/**
+		 * @since 4.1.1 - добавил две сущности support, paths. Удалил свойства, plugin_build
+		 *                plugin_assembly, main_file, plugin_root, relative_path, plugin_url
 		 * @since 4.0.8 - добавлена дополнительная логика
 		 *
-		 * @param string $plugin_path
+		 * @param string $plugin_file
 		 * @param array $data
 		 *
 		 * @throws Exception
 		 */
-		public function __construct( $plugin_path, $data ) {
+		public function __construct( $plugin_file, $data ) {
+			$this->plugin_file = $plugin_file;
 			$this->plugin_data = $data;
 			
 			foreach ( (array) $data as $option_name => $option_value ) {
@@ -182,20 +168,121 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 				}
 			}
 			
-			if ( empty( $this->prefix ) || empty( $this->plugin_title ) || empty( $this->plugin_version ) || empty( $this->plugin_build ) ) {
-				throw new Exception( 'One of the required attributes has not been passed (prefix,plugin_title,plugin_name,plugin_version,plugin_build).' );
+			if ( empty( $this->prefix ) || empty( $this->plugin_name ) || empty( $this->plugin_title ) || empty( $this->plugin_version ) || empty( $this->plugin_text_domain ) ) {
+				throw new Exception( 'One of the required attributes has not been passed (prefix, plugin_title, plugin_name, plugin_version, plugin_text_domain).' );
 			}
 			
-			// saves plugin basic paramaters
-			$this->main_file     = $plugin_path;
-			$this->plugin_root   = dirname( $plugin_path );
-			$this->relative_path = plugin_basename( $plugin_path );
-			$this->plugin_url    = plugins_url( null, $plugin_path );
+			$this->support = new \WBCR\Factory_000\Entities\Support( $this->support_details );
+			$this->paths   = new \WBCR\Factory_000\Entities\Paths( $plugin_file );
 			
 			// used only in the module 'updates'
-			$this->plugin_slug = ! empty( $this->plugin_name ) ? $this->plugin_name : basename( $plugin_path );
+			$this->plugin_slug = ! empty( $this->plugin_name ) ? $this->plugin_name : basename( $plugin_file );
 		}
 		
+		/**
+		 * @param $name
+		 *
+		 * @return string|null
+		 */
+		public function __get( $name ) {
+			
+			$deprecated_props = array(
+				'plugin_build',
+				'plugin_assembly',
+				'main_file',
+				'plugin_root',
+				'relative_path',
+				'plugin_url'
+			);
+			
+			if ( in_array( $name, $deprecated_props ) ) {
+				$deprecated_message = 'In version 4.1.1 of the Factory framework, the class properties ';
+				$deprecated_message .= '(' . implode( ',', $deprecated_props ) . ')';
+				$deprecated_message .= 'have been removed. To get plugin paths, use the new paths property.' . PHP_EOL;
+				
+				$backtrace = debug_backtrace();
+				if ( ! empty( $backtrace ) && isset( $backtrace[1] ) ) {
+					$deprecated_message .= 'BACKTRACE:(';
+					$deprecated_message .= 'File: ' . $backtrace[1]['file'];
+					$deprecated_message .= 'Function: ' . $backtrace[1]['function'];
+					$deprecated_message .= 'Line: ' . $backtrace[1]['line'];
+					$deprecated_message .= ')';
+				}
+				
+				_deprecated_argument( __METHOD__, '4.1.1', $deprecated_message );
+				
+				switch ( $name ) {
+					case 'plugin_build':
+						return null;
+						break;
+					case 'plugin_assembly':
+						return null;
+						break;
+					case 'main_file':
+						return $this->get_paths()->main_file;
+						break;
+					case 'plugin_root':
+						return $this->get_paths()->absolute;
+						break;
+					case 'relative_path':
+						return $this->get_paths()->relative;
+						break;
+					case 'plugin_url':
+						return $this->get_paths()->url;
+						break;
+				}
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * @param $name
+		 * @param $arguments
+		 *
+		 * @return stdClass|null
+		 * @throws Exception
+		 */
+		public function __call( $name, $arguments ) {
+			
+			$deprecated_methods = array(
+				'getPluginBuild',
+				'getPluginAssembly',
+				'getPluginPathInfo'
+			);
+			
+			if ( in_array( $name, $deprecated_methods ) ) {
+				$deprecated_message = 'In version 4.1.1 of the Factory framework, methods (' . implode( ',', $deprecated_methods ) . ') have been removed.';
+				
+				$backtrace = debug_backtrace();
+				if ( ! empty( $backtrace ) && isset( $backtrace[1] ) ) {
+					$deprecated_message .= 'BACKTRACE:(';
+					$deprecated_message .= 'File: ' . $backtrace[1]['file'];
+					$deprecated_message .= 'Function: ' . $backtrace[1]['function'];
+					$deprecated_message .= 'Line: ' . $backtrace[1]['line'];
+					$deprecated_message .= ')';
+				}
+				
+				_deprecated_argument( __METHOD__, '4.1.1', $deprecated_message );
+				
+				if ( 'getPluginPathInfo' == $name ) {
+					$object = new stdClass;
+					
+					$object->main_file     = $this->get_paths()->main_file;
+					$object->plugin_root   = $this->get_paths()->absolute;
+					$object->relative_path = $this->get_paths()->relative;
+					$object->plugin_url    = $this->get_paths()->url;
+					
+					return $object;
+				}
+			}
+			
+			throw new Exception( "Method {$name} does not exist" );
+		}
+		
+		/**
+		 * @return bool
+		 */
 		public function has_premium() {
 			return $this->has_premium;
 		}
@@ -229,35 +316,6 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 		}
 		
 		/**
-		 * @return string
-		 */
-		public function getPluginBuild() {
-			return $this->plugin_build;
-		}
-		
-		/**
-		 * @return string
-		 */
-		public function getPluginAssembly() {
-			return $this->plugin_assembly;
-		}
-		
-		/**
-		 * @return stdClass
-		 */
-		public function getPluginPathInfo() {
-			
-			$object = new stdClass;
-			
-			$object->main_file     = $this->main_file;
-			$object->plugin_root   = $this->plugin_root;
-			$object->relative_path = $this->relative_path;
-			$object->plugin_url    = $this->plugin_url;
-			
-			return $object;
-		}
-		
-		/**
 		 * @param $attr_name
 		 *
 		 * @return null
@@ -268,6 +326,20 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 			}
 			
 			return null;
+		}
+		
+		/**
+		 * @return \WBCR\Factory_000\Entities\Support
+		 */
+		public function get_support() {
+			return $this->support;
+		}
+		
+		/**
+		 * @return \WBCR\Factory_000\Entities\Paths
+		 */
+		public function get_paths() {
+			return $this->paths;
 		}
 		
 		/**
@@ -298,7 +370,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 				require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
 			}
 			
-			$activate = is_plugin_active_for_network( $this->relative_path );
+			$activate = is_plugin_active_for_network( $this->get_paths()->relative );
 			
 			if ( ! $activate && $this->isNetworkAdmin() && isset( $_GET['action'] ) && $_GET['action'] == 'activate' ) {
 				$is_activate_for_network = isset( $_GET['plugin_status'] ) && $_GET['plugin_status'] == 'all';

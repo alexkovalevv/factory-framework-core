@@ -42,7 +42,7 @@ class Migrations {
 		$this->plugin = $plugin;
 		$plugin_name  = $plugin->getPluginName();
 		
-		if ( ! file_exists( $this->get_migration_folder_path() ) ) {
+		if ( ! file_exists( $this->plugin->get_paths()->migrations ) ) {
 			throw new Exception( 'Starting with version 4.1.1 of the Core for Factory framework module, you must create a "migrations" folder in the root of your plugin to store the migration of the plugin.' );
 		}
 		
@@ -283,7 +283,7 @@ class Migrations {
 		
 		try {
 			
-			$update_files = $this->get_migration_folder_path();
+			$update_files = $this->plugin->get_paths()->migrations;
 			$files        = $this->find_files( $update_files );
 			
 			if ( empty( $files ) ) {
@@ -358,27 +358,6 @@ class Migrations {
 		#-------------------------------------------
 		
 		$this->plugin->updatePopulateOption( 'plugin_version', $this->get_current_plugin_version() );
-	}
-	
-	/**
-	 * Get the path to the plugin's root directory.
-	 *
-	 * @return mixed
-	 */
-	protected function get_plugin_root() {
-		$path_info = $this->plugin->getPluginPathInfo();
-		
-		return $path_info->plugin_root;
-	}
-	
-	/**
-	 * Gets the path to the plugin directory where migrations are stored
-	 * Default: wp-content/plugins/plugin-name/migrations
-	 *
-	 * @return string
-	 */
-	protected function get_migration_folder_path() {
-		return $this->get_plugin_root() . '/migrations';
 	}
 	
 	/**
