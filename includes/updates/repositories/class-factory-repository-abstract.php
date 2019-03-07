@@ -47,7 +47,12 @@ abstract class Repository {
 	abstract public function get_download_url();
 	
 	/**
-	 * @return string
+	 * @return bool
 	 */
-	abstract public function get_check_version_url();
+	abstract public function need_update();
+	
+	/**
+	 * @return bool
+	 */
+	abstract public function check_updates();
 }

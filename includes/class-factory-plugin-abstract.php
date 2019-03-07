@@ -451,7 +451,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		/**
 		 * Создает нового рабочего для проверки обновлений и апгрейда текущего плагина.         *
 		 *
-		 * @since 4.1.1         *
+		 * @since 4.1.1
 		 *
 		 * @param array $data
 		 *
@@ -460,7 +460,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		 */
 		protected function init_plugin_updates() {
 			if ( ! empty( $this->updates_settings ) ) {
-				new WBCR\Factory_000\Updates\Manager( $this, $this->updates_settings );
+				new WBCR\Factory_000\Updates\Upgrader( $this );
 			}
 		}
 		
@@ -482,6 +482,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 			}
 			
 			$this->premium = WBCR\Factory_000\Premium\Manager::instance( $this, $this->license_settings );
+			new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
 		}
 		
 		/**

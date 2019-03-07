@@ -55,7 +55,8 @@ require_once( FACTORY_000_DIR . '/includes/premium/class-factory-manager.php' );
 // UPDATES
 require_once( FACTORY_000_DIR . '/includes/updates/repositories/class-factory-repository-abstract.php' );
 require_once( FACTORY_000_DIR . '/includes/updates/repositories/class-factory-wordpress.php' );
-require_once( FACTORY_000_DIR . '/includes/updates/class-factory-manager.php' );
+require_once( FACTORY_000_DIR . '/includes/updates/class-factory-upgrader.php' );
+require_once( FACTORY_000_DIR . '/includes/updates/class-factory-premium-upgrader.php' );
 
 require_once( FACTORY_000_DIR . '/includes/class-factory-plugin-abstract.php' );
 

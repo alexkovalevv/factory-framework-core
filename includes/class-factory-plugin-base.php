@@ -225,7 +225,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 						return $this->get_paths()->absolute;
 						break;
 					case 'relative_path':
-						return $this->get_paths()->relative;
+						return $this->get_paths()->basename;
 						break;
 					case 'plugin_url':
 						return $this->get_paths()->url;
@@ -270,7 +270,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 					
 					$object->main_file     = $this->get_paths()->main_file;
 					$object->plugin_root   = $this->get_paths()->absolute;
-					$object->relative_path = $this->get_paths()->relative;
+					$object->relative_path = $this->get_paths()->basename;
 					$object->plugin_url    = $this->get_paths()->url;
 					
 					return $object;
@@ -370,7 +370,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Base' ) ) {
 				require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
 			}
 			
-			$activate = is_plugin_active_for_network( $this->get_paths()->relative );
+			$activate = is_plugin_active_for_network( $this->get_paths()->basename );
 			
 			if ( ! $activate && $this->isNetworkAdmin() && isset( $_GET['action'] ) && $_GET['action'] == 'activate' ) {
 				$is_activate_for_network = isset( $_GET['plugin_status'] ) && $_GET['plugin_status'] == 'all';

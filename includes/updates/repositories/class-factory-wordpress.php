@@ -30,10 +30,16 @@ class Wordpress_Repository extends Repository {
 		$this->is_premium = $is_premium;
 	}
 	
+	/**
+	 * @return bool
+	 */
 	public function need_check_updates() {
 		return false;
 	}
 	
+	/**
+	 * @return bool
+	 */
 	public function is_support_premium() {
 		return false;
 	}
@@ -45,10 +51,11 @@ class Wordpress_Repository extends Repository {
 		return '';
 	}
 	
-	/**
-	 * @return string
-	 */
-	public function get_check_version_url() {
-		return '';
+	public function check_updates() {
+	
+	}
+	
+	public function need_update() {
+	
 	}
 }

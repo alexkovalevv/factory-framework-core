@@ -12,19 +12,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Выполняет проверку обновлений, обновления, скачивание плагинов
- *
  * @author Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
  * @link https://webcraftic.com
  * @copyright (c) 2018 Webraftic Ltd
  * @version 1.0
  */
-class Manager {
+class Upgrader {
 	
 	/**
 	 * @var Wbcr_Factory000_Plugin
 	 */
 	protected $plugin;
+	
+	/**
+	 * @var string
+	 */
+	protected $plugin_basename;
+	
+	/**
+	 * @var string
+	 */
+	protected $plugin_main_file;
+	
+	/**
+	 * @var string
+	 */
+	protected $plugin_absolute_path;
 	
 	/**
 	 * Имя плагина, для которого нужно проверять обновления
@@ -48,43 +61,59 @@ class Manager {
 	/**
 	 * Manager constructor.
 	 *
+	 * @since 4.1.1
+	 *
 	 * @param Wbcr_Factory000_Plugin $plugin
 	 * @param $args
 	 * @param bool $is_premium
 	 *
 	 * @throws Exception
 	 */
-	public function __construct( Wbcr_Factory000_Plugin $plugin, $args, $is_premium = false ) {
+	public function __construct( Wbcr_Factory000_Plugin $plugin ) {
 		
-		$this->plugin     = $plugin;
-		$this->is_premium = $is_premium;
+		$this->plugin = $plugin;
 		
-		$parsed_args = wp_parse_args( $args, array(
-			'repository' => 'wordpress',
-			'slug'       => '',
-			'rollback'   => array(
-				'prev_stable_version' => '0.0.0'
-			)
-		) );
+		$this->plugin_basename      = $plugin->get_paths()->basename;
+		$this->plugin_main_file     = $plugin->get_paths()->main_file;
+		$this->plugin_absolute_path = $plugin->get_paths()->absolute;
 		
-		$this->plugin_slug = $parsed_args['slug'];
-		$this->rollback    = $parsed_args['rollback'];
+		$settings = $this->get_settings();
+		
+		$this->plugin_slug = $settings['slug'];
+		$this->rollback    = $settings['rollback_settings'];
 		
 		if ( empty( $this->plugin_slug ) || ! is_string( $this->plugin_slug ) ) {
 			throw new Exception( 'Argument {slug} can not be empty and must be of type string.' );
 		}
 		
-		$this->repository = $this->get_repository( $parsed_args['repository'] );
-		
-		if ( $this->is_premium && ! $this->repository->is_support_premium() ) {
-			throw new Exception( "Repository {$parsed_args['repository']} does not have support premium." );
-		}
+		$this->repository = $this->get_repository( $settings['repository'] );
 		
 		$this->init_hooks();
 	}
 	
-	public function init_hooks() {
+	/**
+	 * @return array
+	 */
+	protected function get_settings() {
+		$settings = $this->plugin->getPluginInfoAttr( 'updates_settings' );
+		
+		return wp_parse_args( $settings, array(
+			'repository'        => 'wordpress',
+			'slug'              => '',
+			'maybe_rollback'    => false,
+			'rollback_settings' => array(
+				'prev_stable_version' => '0.0.0'
+			)
+		) );
+	}
+	
+	/**
+	 * @since 4.1.1
+	 */
+	protected function init_hooks() {
+		
 		if ( $this->repository->need_check_updates() ) {
+			
 			$plugin_name = $this->plugin->getPluginName();
 			
 			if ( is_admin() ) {
@@ -98,26 +127,11 @@ class Manager {
 			}
 			
 			// an action that is called by the cron to check updates
-			add_action( "wbcr/factory/updates/check_for_{$this->plugin_slug}", array( $this, 'check_auto_updates' ) );
+			add_action( "wbcr/factory/updates/check_for_{$this->plugin_slug}", array(
+				$this,
+				'check_auto_updates'
+			) );
 		}
-		
-		/*if ( ! $this->license_manager->is_install_premium() ) {
-			$plugin_base = $plugin->getPluginPathInfo()->relative_path;
-			
-			add_action( "wbcr_factory_notices_000_list", array( $this, "intall_notice_everywhere" ) );
-			add_action( "after_plugin_row_{$plugin_base}", array( $this, "install_notice_in_plugin_row" ), 100, 3 );
-			add_action( "admin_print_styles-plugins.php", array( $this, "print_styles_for_plugin_row" ) );
-			add_action( 'wbcr/factory/pages/impressive/print_all_notices', array(
-				$this,
-				'install_notice_in_plugin_interface'
-			), 10, 2 );
-		}*/
-		/*if ( ! WP_FS__IS_PRODUCTION_MODE ) {
-			add_filter( 'http_request_host_is_external', array(
-				$this,
-				'http_request_host_is_external_filter'
-			), 10, 3 );
-		}*/
 	}
 	
 	/**
@@ -146,6 +160,24 @@ class Manager {
 		$this->clear_updates();
 	}
 	
+	/**
+	 * @param $args
+	 *
+	 * @return string
+	 */
+	protected function get_admin_url( $args ) {
+		$url = admin_url( 'plugins.php', $args );
+		
+		if ( $this->plugin->isNetworkActive() ) {
+			$url = network_admin_url( 'plugins.php', $args );
+		}
+		
+		return add_query_arg( $args, $url );
+	}
+	
+	/**
+	 *
+	 */
 	public function check_auto_updates() {
 		$test = 'fsdf';
 	}
@@ -153,20 +185,21 @@ class Manager {
 	/**
 	 * @param $repository_name
 	 *
+	 * @since 4.1.1
 	 * @throws Exception
 	 * @return Repository
 	 */
 	protected function get_repository( $repository_name ) {
 		switch ( $repository_name ) {
 			case 'wordpress':
-				return new Wordpress_Repository( $this->plugin, $this->is_premium );
+				return new Wordpress_Repository( $this->plugin );
 				break;
 			case 'freemius':
 				if ( ! defined( 'FACTORY_FREEMIUS_000_LOADED' ) ) {
 					throw new Exception( 'If you have to get updates from the Freemius repository, you need to install the freemius module.' );
 				}
 				
-				return new Freemius_Repository( $this->plugin, $this->is_premium );
+				return new Freemius_Repository( $this->plugin );
 				break;
 			default:
 				return $this->instance_other_repository( $repository_name );
@@ -212,12 +245,13 @@ class Manager {
 		
 		require_once $repository_data['class_path'];
 		
-		return new $repository_data['class_name']( $this->plugin, $this->is_premium );
+		return new $repository_data['class_name']( $this->plugin );
 	}
 	
 	
 	/**
 	 * Clears info about updates for the plugin.
+	 *
 	 * @since 4.1.1
 	 */
 	public function clear_updates() {
@@ -233,6 +267,7 @@ class Manager {
 	
 	/**
 	 * Fix a bug when the message offering to change assembly appears even if the assemble is correct.
+	 *
 	 * @since 4.1.1
 	 */
 	public function clear_transient() {
@@ -248,6 +283,7 @@ class Manager {
 	
 	/**
 	 * Need to check updates?
+	 *
 	 * @since 4.1.1
 	 */
 	public function need_check_updates() {
@@ -256,6 +292,7 @@ class Manager {
 	
 	/**
 	 * Need to change a current assembly?
+	 *
 	 * @since 4.1.1
 	 */
 	public function need_change_assembly() {
@@ -264,6 +301,7 @@ class Manager {
 	
 	/**
 	 * Returns true if a plugin version has been checked up to the moment.
+	 *
 	 * @since 4.1.1
 	 */
 	public function is_version_checked() {
@@ -280,121 +318,7 @@ class Manager {
 	/**
 	 * @since 4.1.1
 	 */
-	public function upgrade() {
-	
-	}
-	
-	/**
-	 * @since 4.1.1
-	 */
 	public function rollback() {
 	
-	}
-	
-	/**
-	 * Выводит уведомление внутри интерфейса плагина, на всех страницах плагина.
-	 *
-	 * @since 4.1.1
-	 *
-	 * @param Wbcr_Factory000_Plugin $plugin
-	 * @param Wbcr_FactoryPages000_ImpressiveThemplate $obj
-	 *
-	 * @return void
-	 */
-	public function install_notice_in_plugin_interface( $plugin, $obj ) {
-		$obj->printWarningNotice( $this->get_please_install_premium_text() );
-	}
-	
-	/**
-	 * Выводит уведомление на всех страницах админ панели Wordpress
-	 *
-	 * @since 4.1.1
-	 *
-	 * @param $notices *
-	 *
-	 * @return array
-	 */
-	public function intall_notice_everywhere( $notices ) {
-		if ( ! current_user_can( 'update_plugins' ) ) {
-			return $notices;
-		}
-		
-		$notices[] = array(
-			'id'              => 'please_install_premium_for_' . $this->plugin->getPluginName(),
-			'type'            => 'warning',
-			'dismissible'     => true,
-			'dismiss_expires' => 0,
-			'text'            => '<p><b>Robin image optimizer:</b> ' . $this->get_please_install_premium_text() . '</p>'
-		);
-		
-		return $notices;
-	}
-	
-	/**
-	 * Выводит уведомление в строке плагина (на странице плагинов),
-	 * что нужно установить премиум плагин.
-	 *
-	 * @since 4.1.1
-	 * @see WP_Plugins_List_Table
-	 *
-	 * @param string $plugin_file
-	 * @param array $plugin_data
-	 * @param string $status
-	 *
-	 * @return void
-	 */
-	public function install_notice_in_plugin_row( $plugin_file, $plugin_data, $status ) {
-		if ( ! current_user_can( 'update_plugins' ) ) {
-			return;
-		};
-		?>
-        <tr class="plugin-update-tr active update wbcr-factory-updates">
-            <td colspan="3" class="plugin-update colspanchange">
-                <div class="update-message notice inline notice-warning notice-alt">
-                    <p>
-						<?= $this->get_please_install_premium_text(); ?>
-                    </p>
-                </div>
-            </td>
-        </tr>
-		<?php
-	}
-	
-	/**
-	 * Печатает стили для уведомления о загрузке премиум версии на странице плагинов.
-	 *
-	 * @since 4.1.1
-	 * @return void
-	 */
-	public function print_styles_for_plugin_row() {
-		?>
-        <style>
-            tr[data-plugin="<?= $this->plugin->getPluginPathInfo()->relative_path ?>"] th,
-            tr[data-plugin="<?= $this->plugin->getPluginPathInfo()->relative_path ?>"] td {
-                box-shadow: none !important;
-            }
-
-            .wbcr-factory-updates .update-message {
-                background-color: #f5e9f5 !important;
-                border-color: #dab9da !important;
-            }
-        </style>
-		<?php
-	}
-	
-	/**
-	 * Текст уведомления. Уведомление требует установить премиум плагина,
-	 * чтобы открыть дополнительные функции плагина.
-	 *
-	 * @since 4.1.1
-	 * @return string
-	 */
-	protected function get_please_install_premium_text() {
-		//$upgrade_url        = $this->license_manager->get_upgrade_url();
-		$upgrade_url        = $this->get_download_url();
-		$cancel_license_url = '';
-		
-		return sprintf( __( 'Congratulations, you have activated a premium license! Please install premium add-on to use pro features now.
-        <a href="%s">Install</a> premium add-on or <a href="%s">cancel</a> license.', '' ), $upgrade_url, $cancel_license_url );
 	}
 }

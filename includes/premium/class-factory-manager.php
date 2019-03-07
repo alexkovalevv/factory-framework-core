@@ -51,26 +51,26 @@ class Manager {
 	 * @param Wbcr_Factory000_Plugin $plugin
 	 * @param array $settings
 	 *
-	 * @return \WBCR\Factory_Freemius_000\Licensing\Provider
+	 * @return \WBCR\Factory_Freemius_000\Premium\Provider
 	 * @throws Exception
 	 */
 	public static function instance( Wbcr_Factory000_Plugin $plugin, array $settings ) {
-		$license_manager = new Manager( $plugin, $settings );
+		$premium_manager = new Manager( $plugin, $settings );
 		
-		return $license_manager->init();
+		return $premium_manager->instance_provider();
 	}
 	
 	/**
 	 * @param $provider_name
 	 *
-	 * @return \WBCR\Factory_Freemius_000\Licensing\Provider
+	 * @return \WBCR\Factory_Freemius_000\Premium\Provider
 	 * @throws Exception
 	 */
-	public function init() {
+	public function instance_provider() {
 		$provider_name = $this->get_setting( 'provider' );
 		
 		if ( 'freemius' == $provider_name ) {
-			return new \WBCR\Factory_Freemius_000\Licensing\Provider( $this->plugin, $this->settings );
+			return new \WBCR\Factory_Freemius_000\Premium\Provider( $this->plugin, $this->settings );
 		} else if ( 'codecanyon' == $provider_name ) {
 			//return new \WBCR\Factory_Codecanyon_000\Licensing\Provider( $this->plugin, $this->settings );
 			throw new Exception( 'Codecanyon provider is not supported!' );

@@ -70,6 +70,8 @@ abstract class Provider {
 	}
 	
 	/**
+	 * todo: Вынести с лицензионный менеджер
+	 *
 	 * @param array $license_info
 	 * @param string $plugin_name
 	 */
@@ -82,6 +84,8 @@ abstract class Provider {
 	}
 	
 	/**
+	 * todo: вынести в лицензионный менеджер
+	 *
 	 * @param array $license_info
 	 * @param string $plugin_name
 	 */
@@ -101,7 +105,45 @@ abstract class Provider {
 	 * @return bool
 	 */
 	public function is_install_package() {
-		return false;
+		$premium_package_data = $this->get_package_data();
+		
+		return ! empty( $premium_package_data );
+	}
+	
+	/**
+	 * @return bool|mixed|null
+	 */
+	public function get_package_data() {
+		$premium_package = $this->plugin->getPopulateOption( 'premium_package' );
+		
+		if ( ! empty( $premium_package ) ) {
+			return wp_parse_args( $premium_package, array(
+				'base_path'         => null,
+				'version'           => null,
+				'framework_version' => null
+			) );
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * @param $plugin_data
+	 *
+	 * @throws Exception
+	 */
+	public function update_package_data( array $package ) {
+		$parsed_args = wp_parse_args( $package, array(
+			'base_path'         => null,
+			'version'           => null,
+			'framework_version' => null
+		) );
+		
+		if ( empty( $parsed_args['base_path'] ) || empty( $parsed_args['version'] ) || empty( $parsed_args['framework_version'] ) ) {
+			throw new Exception( 'You must pass the required attributes (base_path, name, version).' );
+		}
+		
+		$this->plugin->updatePopulateOption( 'premium_package', $parsed_args );
 	}
 	
 	/**
@@ -115,12 +157,12 @@ abstract class Provider {
 	abstract public function is_active();
 	
 	/**
-	 * @return string
+	 * @return string|null
 	 */
 	abstract public function get_plan();
 	
 	/**
-	 * @return string
+	 * @return string|null
 	 */
 	abstract public function get_billing_cycle();
 	
@@ -128,6 +170,11 @@ abstract class Provider {
 	 * @return \WBCR\Factory_000\Premium\Interfaces\License
 	 */
 	abstract public function get_license();
+	
+	/**
+	 * @return string|null
+	 */
+	abstract public function get_package_download_url();
 	
 	/**
 	 * @param string $key
