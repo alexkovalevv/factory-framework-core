@@ -3,6 +3,7 @@
 namespace WBCR\Factory_000\Updates;
 
 use Exception;
+use stdClass;
 use Wbcr_Factory000_Plugin;
 use WBCR\Factory_Freemius_000\Updates\Freemius_Repository;
 
@@ -18,6 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @version 1.0
  */
 class Upgrader {
+	
+	const CHECK_UPDATES_INTERVAL = HOUR_IN_SECONDS + 12;
+	
+	/**
+	 * Тип апгрейдера, может быть default, premium
+	 * @var string
+	 */
+	protected $type = 'default';
 	
 	/**
 	 * @var Wbcr_Factory000_Plugin
@@ -59,6 +68,11 @@ class Upgrader {
 	);
 	
 	/**
+	 * @var bool
+	 */
+	protected $is_debug = false;
+	
+	/**
 	 * Manager constructor.
 	 *
 	 * @since 4.1.1
@@ -76,6 +90,7 @@ class Upgrader {
 		$this->plugin_basename      = $plugin->get_paths()->basename;
 		$this->plugin_main_file     = $plugin->get_paths()->main_file;
 		$this->plugin_absolute_path = $plugin->get_paths()->absolute;
+		$this->is_debug             = defined( 'FACTORY_UPDATES_DEBUG' ) && FACTORY_UPDATES_DEBUG;
 		
 		$settings = $this->get_settings();
 		
@@ -109,58 +124,119 @@ class Upgrader {
 	
 	/**
 	 * @since 4.1.1
+	 * @throws Exception
 	 */
 	protected function init_hooks() {
 		
 		if ( $this->repository->need_check_updates() ) {
+			add_filter( 'site_transient_update_plugins', array(
+				$this,
+				'site_transient_update_plugins_hook'
+			) );
 			
-			$plugin_name = $this->plugin->getPluginName();
+			add_action( 'wp_update_plugins', array( $this, 'reset_check_update_timer' ), 9 ); // WP Cron.
+			add_action( 'deleted_site_transient', array( $this, 'reset_check_update_timer' ) );
+			add_action( 'setted_site_transient', array( $this, 'reset_check_update_timer' ) );
+		}
+	}
+	
+	
+	/**
+	 * When WP sets the update_plugins site transient, we set our own transient
+	 *
+	 * @since 4.1.1
+	 *
+	 * @param Object $transient Site transient object.
+	 *
+	 * @throws Exception
+	 */
+	public function site_transient_update_plugins_hook( $transient ) {
+		
+		if ( ! $transient || ! is_object( $transient ) ) {
+			return $transient;
+		}
+		
+		$temp_object = $this->check_updates();
+		
+		if ( empty( $temp_object ) && is_object( $temp_object ) && version_compare( $this->get_plugin_version(), $temp_object->new_version, '<' ) ) {
+			$transient->response[ $temp_object->plugin ] = $temp_object;
 			
-			if ( is_admin() ) {
-				add_action( "wbcr/factory/plugin_{$plugin_name}_activation", array( $this, 'register_cron_tasks' ) );
-				add_action( "wbcr/factory/plugin_{$plugin_name}_deactivation", array( $this, 'clear_cron_tasks' ) );
+			return $transient;
+		}
+		
+		return $transient;
+	}
+	
+	/**
+	 * When WP deletes the update_plugins site transient or updates the plugins, we delete our own transients to avoid another 12 hours waiting
+	 *
+	 * @since 4.1.1
+	 *
+	 * @param string $transient Transient name.
+	 * @param object $value Transient object.
+	 */
+	public function reset_check_update_timer( $transient = 'update_plugins', $value = null ) {
+		$options_prefix = $this->type == "default" ? "" : "_" . $this->type;
+		
+		// $value used by setted.
+		if ( 'update_plugins' === $transient ) {
+			if ( is_null( $value ) || is_object( $value ) && ! isset( $value->response ) ) {
 				
-				// if a special constant set, then forced to check updates
-				if ( defined( 'FACTORY_UPDATES_DEBUG' ) && FACTORY_UPDATES_DEBUG ) {
-					//$this->check_auto_updates();
+				$last_check_time = (int) $this->plugin->getPopulateOption( "last_check{$options_prefix}_update_time", 0 );
+				
+				if ( 0 !== $last_check_time && time() > ( $last_check_time + MINUTE_IN_SECONDS ) ) {
+					$this->plugin->deletePopulateOption( "last_check{$options_prefix}_update_time" );
+					$this->plugin->deletePopulateOption( "last_check{$options_prefix}_update" );
 				}
 			}
+		}
+	}
+	
+	/**
+	 * Проверяет последние обновления для текущего или премиум плагина.
+	 *
+	 * @since 4.1.1
+	 * @return object|null
+	 * @throws Exception
+	 */
+	protected function check_updates( $force = false ) {
+		
+		$options_prefix         = $this->type == "default" ? "" : "_" . $this->type;
+		$check_updates_interval = self::CHECK_UPDATES_INTERVAL;
+		$last_check_time        = (int) $this->plugin->getPopulateOption( "last_check{$options_prefix}_update_time", 0 );
+		
+		if ( $this->is_debug && defined( 'FACTORY_CHECK_UPDATES_INTERVAL' ) ) {
+			$check_updates_interval = FACTORY_CHECK_UPDATES_INTERVAL;
+			if ( empty( $check_updates_interval ) || ! is_numeric( $check_updates_interval ) ) {
+				$check_updates_interval = MINUTE_IN_SECONDS;
+			}
+		}
+		
+		if ( $force || ( time() > ( $last_check_time + $check_updates_interval ) ) ) {
 			
-			// an action that is called by the cron to check updates
-			add_action( "wbcr/factory/updates/check_for_{$this->plugin_slug}", array(
-				$this,
-				'check_auto_updates'
-			) );
-		}
-	}
-	
-	/**
-	 * Calls on plugin activation or updating.
-	 * @since 4.1.1
-	 */
-	public function register_cron_tasks() {
-		// set cron tasks and clear last version check data
-		if ( ! wp_next_scheduled( "wbcr/factory/updates/check_for_{$this->plugin_slug}" ) ) {
-			wp_schedule_event( time(), 'twicedaily', "wbcr/factory/updates/check_for_{$this->plugin_slug}" );
-		}
-		
-		$this->clear_updates();
-	}
-	
-	/**
-	 * Calls on plugin deactivation .
-	 * @since 4.1.1
-	 */
-	public function clear_cron_tasks() {
-		// clear cron tasks and license data
-		if ( wp_next_scheduled( "wbcr/factory/updates/check_for_{$this->plugin_slug}" ) ) {
-			wp_unschedule_hook( "wbcr/factory/updates/check_for_{$this->plugin_slug}" );
+			$this->plugin->updatePopulateOption( "last_check{$options_prefix}_update_time", time() );
+			
+			$last_version = $this->repository->get_last_version();
+			
+			if ( ! empty( $last_version ) ) {
+				$temp_object              = new stdClass();
+				$temp_object->slug        = $this->plugin_slug;
+				$temp_object->plugin      = $this->plugin_basename;
+				$temp_object->new_version = $last_version;
+				$temp_object->package     = $this->repository->get_download_url();
+				
+				$this->plugin->updatePopulateOption( "last_check{$options_prefix}_update", $temp_object );
+				
+				return $temp_object;
+			}
 		}
 		
-		$this->clear_updates();
+		return $this->plugin->getPopulateOption( "last_check{$options_prefix}_update" );
 	}
 	
 	/**
+	 * @since 4.1.1
+	 *
 	 * @param $args
 	 *
 	 * @return string
@@ -176,16 +252,10 @@ class Upgrader {
 	}
 	
 	/**
+	 * @since 4.1.1
 	 *
-	 */
-	public function check_auto_updates() {
-		$test = 'fsdf';
-	}
-	
-	/**
 	 * @param $repository_name
 	 *
-	 * @since 4.1.1
 	 * @throws Exception
 	 * @return Repository
 	 */
@@ -223,7 +293,7 @@ class Upgrader {
 		 * @since 4.1.1
 		 * @type array $other_repositories
 		 */
-		$other_repositories = apply_filters( 'wbcr/factory/updates_manager/repositories', $other_repositories );
+		$other_repositories = apply_filters( 'wbcr/factory/updates/repositories', $other_repositories );
 		
 		if ( ! isset( $other_repositories[ $name ] ) ) {
 			return null;
@@ -248,77 +318,18 @@ class Upgrader {
 		return new $repository_data['class_name']( $this->plugin );
 	}
 	
-	
 	/**
-	 * Clears info about updates for the plugin.
-	 *
 	 * @since 4.1.1
+	 * @return string
 	 */
-	public function clear_updates() {
-		/*delete_option('onp_version_check_' . $this->plugin->pluginName);
-		$this->lastCheck = null;
-		
-		$transient = $this->changePluginTransient(get_site_transient('update_plugins'));
-		if( !empty($transient) ) {
-			unset($transient->response[$this->plugin->relativePath]);
-			onp_updates_000_set_site_transient('update_plugins', $transient);
-		}*/
-	}
-	
-	/**
-	 * Fix a bug when the message offering to change assembly appears even if the assemble is correct.
-	 *
-	 * @since 4.1.1
-	 */
-	public function clear_transient() {
-		/*$screen = get_current_screen();
-		if( empty($screen) ) {
-			return;
-		}
-		
-		if( in_array($screen->base, array('plugins', 'update-core')) ) {
-			$this->updatePluginTransient();
-		}*/
-	}
-	
-	/**
-	 * Need to check updates?
-	 *
-	 * @since 4.1.1
-	 */
-	public function need_check_updates() {
-	
-	}
-	
-	/**
-	 * Need to change a current assembly?
-	 *
-	 * @since 4.1.1
-	 */
-	public function need_change_assembly() {
-	
-	}
-	
-	/**
-	 * Returns true if a plugin version has been checked up to the moment.
-	 *
-	 * @since 4.1.1
-	 */
-	public function is_version_checked() {
-	
+	protected function get_plugin_version() {
+		return $this->plugin->getPluginVersion();
 	}
 	
 	/**
 	 * @since 4.1.1
 	 */
-	public function check_updates() {
-	
-	}
-	
-	/**
-	 * @since 4.1.1
-	 */
-	public function rollback() {
+	protected function rollback() {
 	
 	}
 }

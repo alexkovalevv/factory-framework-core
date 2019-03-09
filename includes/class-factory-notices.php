@@ -58,15 +58,10 @@ class Notices {
 	
 	/**
 	 * Инициализируем уведомлений сразу после загрузки модуля уведомлений
-	 */
-	public function __construct() {
-		add_action( 'wbcr_factory_notices_000_plugin_created', array( $this, 'init' ) );
-	}
-	
-	/**
+	 *
 	 * @param Wbcr_Factory000_Plugin $plugin
 	 */
-	public function init( Wbcr_Factory000_Plugin $plugin ) {
+	public function __construct( $plugin ) {
 		//default notices
 		//---
 		

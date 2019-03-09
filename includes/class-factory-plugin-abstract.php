@@ -445,7 +445,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		 * @return void
 		 */
 		protected function init_plugin_notices() {
-			new Wbcr\Factory_000\Notices();
+			new Wbcr\Factory_000\Notices( $this );
 		}
 		
 		/**
@@ -475,14 +475,20 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 		 * @throws Exception
 		 */
 		protected function init_plugin_premium_features() {
-			if ( ! $this->has_premium ) {
+			if ( ! $this->has_premium || ! $this->license_settings ) {
 				$this->premium = null;
 				
 				return;
 			}
 			
 			$this->premium = WBCR\Factory_000\Premium\Manager::instance( $this, $this->license_settings );
-			new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
+			
+			$premium_upgrader = new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
+			//$premium_upgrader->register_public_hooks();
+			
+			//if ( $this->premium->is_activate() ) {
+				//$this->premium->runtime();
+			//}
 		}
 		
 		/**

@@ -51,11 +51,21 @@ class Wordpress_Repository extends Repository {
 		return '';
 	}
 	
+	/**
+	 * @return string
+	 */
+	public function get_last_version() {
+		return '0.0.0';
+	}
+	
 	public function check_updates() {
 	
 	}
 	
+	/**
+	 * @return bool
+	 */
 	public function need_update() {
-	
+		return false;
 	}
 }
