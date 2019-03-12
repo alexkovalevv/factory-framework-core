@@ -162,8 +162,8 @@ abstract class Provider {
 			'framework_version' => null
 		) );
 		
-		if ( empty( $parsed_args['basename'] ) || empty( $parsed_args['version'] ) || empty( $parsed_args['framework_version'] ) ) {
-			throw new Exception( 'You must pass the required attributes (basename, name, version).' );
+		if ( empty( $parsed_args['basename'] ) || empty( $parsed_args['version'] ) ) {
+			throw new Exception( 'You must pass the required attributes (basename, version).' );
 		}
 		
 		$this->plugin->updatePopulateOption( 'premium_package', $parsed_args );

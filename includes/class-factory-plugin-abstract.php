@@ -481,14 +481,11 @@ if ( ! class_exists( 'Wbcr_Factory000_Plugin' ) ) {
 				return;
 			}
 			
+			// Создаем экземляр премиум менеджера, мы сможем к нему обращаться глобально.
 			$this->premium = WBCR\Factory_000\Premium\Manager::instance( $this, $this->license_settings );
 			
-			$premium_upgrader = new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
-			//$premium_upgrader->register_public_hooks();
-			
-			//if ( $this->premium->is_activate() ) {
-				//$this->premium->runtime();
-			//}
+			// Подключаем премиум апгрейдер
+			new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
 		}
 		
 		/**

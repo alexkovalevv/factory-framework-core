@@ -25,9 +25,12 @@ class Wordpress_Repository extends Repository {
 	 * @param Wbcr_Factory000_Plugin $plugin
 	 * @param bool $is_premium
 	 */
-	public function __construct( Wbcr_Factory000_Plugin $plugin, $is_premium = false ) {
-		$this->plugin     = $plugin;
-		$this->is_premium = $is_premium;
+	public function __construct( Wbcr_Factory000_Plugin $plugin ) {
+		$this->plugin = $plugin;
+	}
+	
+	public function init() {
+		// TODO: Implement init() method.
 	}
 	
 	/**

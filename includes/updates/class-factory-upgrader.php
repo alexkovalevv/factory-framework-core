@@ -101,9 +101,20 @@ class Upgrader {
 			throw new Exception( 'Argument {slug} can not be empty and must be of type string.' );
 		}
 		
-		$this->repository = $this->get_repository( $settings['repository'] );
+		$this->set_repository();
 		
-		$this->init_hooks();
+		if ( $this->repository->need_check_updates() ) {
+			$this->init_hooks();
+		}
+	}
+	
+	/**
+	 * @throws Exception
+	 */
+	protected function set_repository() {
+		$settings         = $this->get_settings();
+		$this->repository = $this->get_repository( $settings['repository'] );
+		$this->repository->init();
 	}
 	
 	/**
@@ -127,17 +138,14 @@ class Upgrader {
 	 * @throws Exception
 	 */
 	protected function init_hooks() {
+		add_filter( 'site_transient_update_plugins', array(
+			$this,
+			'site_transient_update_plugins_hook'
+		) );
 		
-		if ( $this->repository->need_check_updates() ) {
-			add_filter( 'site_transient_update_plugins', array(
-				$this,
-				'site_transient_update_plugins_hook'
-			) );
-			
-			add_action( 'wp_update_plugins', array( $this, 'reset_check_update_timer' ), 9 ); // WP Cron.
-			add_action( 'deleted_site_transient', array( $this, 'reset_check_update_timer' ) );
-			add_action( 'setted_site_transient', array( $this, 'reset_check_update_timer' ) );
-		}
+		add_action( 'wp_update_plugins', array( $this, 'reset_check_update_timer' ), 9 ); // WP Cron.
+		add_action( 'deleted_site_transient', array( $this, 'reset_check_update_timer' ) );
+		add_action( 'setted_site_transient', array( $this, 'reset_check_update_timer' ) );
 	}
 	
 	
@@ -158,7 +166,7 @@ class Upgrader {
 		
 		$temp_object = $this->check_updates();
 		
-		if ( empty( $temp_object ) && is_object( $temp_object ) && version_compare( $this->get_plugin_version(), $temp_object->new_version, '<' ) ) {
+		if ( ! empty( $temp_object ) && is_object( $temp_object ) && version_compare( $this->get_plugin_version(), $temp_object->new_version, '<' ) ) {
 			$transient->response[ $temp_object->plugin ] = $temp_object;
 			
 			return $transient;

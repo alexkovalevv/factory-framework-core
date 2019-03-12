@@ -19,9 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 abstract class Repository {
 	
-	protected $plugin;
+	protected $initialized = false;
 	
-	protected $is_premium;
+	protected $plugin;
 	
 	/**
 	 * Repository constructor.
@@ -29,7 +29,12 @@ abstract class Repository {
 	 * @param Wbcr_Factory000_Plugin $plugin
 	 * @param bool $is_premium
 	 */
-	abstract public function __construct( Wbcr_Factory000_Plugin $plugin, $is_premium = false );
+	abstract public function __construct( Wbcr_Factory000_Plugin $plugin );
+	
+	/**
+	 * @return void
+	 */
+	abstract public function init();
 	
 	/**
 	 * @return bool
