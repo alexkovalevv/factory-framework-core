@@ -14,26 +14,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'Wbcr_Factory000_Update' ) ) {
+
+/**
+ * Plugin Activator
+ *
+ * @since 1.0.0
+ */
+abstract class Wbcr_Factory000_Update {
+	
 	/**
-	 * Plugin Activator
-	 *
-	 * @since 1.0.0
+	 * Current plugin
+	 * @var Wbcr_Factory000_Plugin
 	 */
-	abstract class Wbcr_Factory000_Update {
-		
-		/**
-		 * Current plugin
-		 * @var Wbcr_Factory000_Plugin
-		 */
-		var $plugin;
-		
-		public function __construct( Wbcr_Factory000_Plugin $plugin ) {
-			$this->plugin = $plugin;
-		}
-		
-		abstract function install();
-		
-		//abstract function rollback();
+	var $plugin;
+	
+	public function __construct( Wbcr_Factory000_Plugin $plugin ) {
+		$this->plugin = $plugin;
 	}
+	
+	abstract function install();
+	
+	//abstract function rollback();
 }

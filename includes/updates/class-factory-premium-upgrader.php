@@ -153,6 +153,8 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Удаляет данные о пакете, если пользовать удалил премиум плагин
 	 *
+	 * @since 4.1.1
+	 *
 	 * @param $plugin_basename
 	 * @param $success
 	 */
@@ -184,12 +186,18 @@ class Premium_Upgrader extends Upgrader {
 		}
 		
 		if ( $this->need_intall_or_activate_premium() ) {
+			$notice_text = $this->get_notice_text( 'please_activate_premium' );
+			
+			if ( ! $this->plugin->premium->is_install_package() ) {
+				$notice_text = $this->get_notice_text( 'please_install_premium' );
+			}
+			
 			$notices[] = array(
 				'id'              => 'please_install_premium_for_' . $this->plugin->getPluginName(),
 				'type'            => 'warning',
 				'dismissible'     => false,
 				'dismiss_expires' => 0,
-				'text'            => "<p><b>{$this->plugin->getPluginTitle()}:</b> " . $this->get_please_install_premium_text() . '</p>'
+				'text'            => "<p><b>{$this->plugin->getPluginTitle()}:</b> " . $notice_text . '</p>'
 			);
 		} else if ( $this->need_activate_license() ) {
 			$notices[] = array(
@@ -197,7 +205,7 @@ class Premium_Upgrader extends Upgrader {
 				'type'            => 'warning',
 				'dismissible'     => false,
 				'dismiss_expires' => 0,
-				'text'            => "<p><b>{$this->plugin->getPluginTitle()}:</b> " . $this->get_need_license_activate_text() . '</p>'
+				'text'            => "<p><b>{$this->plugin->getPluginTitle()}:</b> " . $this->get_notice_text( 'need_activate_license' ) . '</p>'
 			);
 		} else if ( $this->need_renew_license() ) {
 			// todo: может быть перенести уведомление в премиум менеджер?
@@ -206,7 +214,7 @@ class Premium_Upgrader extends Upgrader {
 				'type'            => 'warning',
 				'dismissible'     => false,
 				'dismiss_expires' => 0,
-				'text'            => "<p><b>{$this->plugin->getPluginTitle()}:</b> " . $this->get_license_expired_text() . '</p>'
+				'text'            => "<p><b>{$this->plugin->getPluginTitle()}:</b> " . $this->get_notice_text( 'need_renew_license' ) . '</p>'
 			);
 		}
 		
@@ -224,7 +232,25 @@ class Premium_Upgrader extends Upgrader {
 	 * @return void
 	 */
 	public function install_notice_in_plugin_interface( $plugin, $obj ) {
-		$obj->printWarningNotice( $this->get_please_install_premium_text() );
+		if ( $plugin->getPluginName() != $this->plugin->getPluginName() ) {
+			return;
+		}
+		
+		$notice_text = '';
+		
+		if ( $this->need_intall_or_activate_premium() ) {
+			$notice_text = $this->get_notice_text( 'please_activate_premium' );
+			
+			if ( ! $this->plugin->premium->is_install_package() ) {
+				$notice_text = $this->get_notice_text( 'please_install_premium' );
+			}
+		} else if ( $this->need_activate_license() ) {
+			$notice_text = $this->get_notice_text( 'need_activate_license' );
+		} else if ( $this->need_renew_license() ) {
+			$notice_text = $this->get_notice_text( 'need_renew_license' );
+		}
+		
+		$obj->printWarningNotice( $notice_text );
 	}
 	
 	/**
@@ -249,11 +275,15 @@ class Premium_Upgrader extends Upgrader {
 		$notice_text = '';
 		
 		if ( $this->need_intall_or_activate_premium() ) {
-			$notice_text = $this->get_please_install_premium_text();
+			$notice_text = $this->get_notice_text( 'please_activate_premium' );
+			
+			if ( ! $this->plugin->premium->is_install_package() ) {
+				$notice_text = $this->get_notice_text( 'please_install_premium' );
+			}
 		} else if ( $this->need_activate_license() ) {
-			$notice_text = $this->get_need_license_activate_text();
+			$notice_text = $this->get_notice_text( 'need_activate_license' );
 		} else if ( $this->need_renew_license() ) {
-			$notice_text = $this->get_license_expired_text();
+			$notice_text = $this->get_notice_text( 'need_renew_license' );
 		}
 		
 		?>
@@ -313,6 +343,8 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Обновляет данные о премиум пакете в базе данных, после обновления плагина.
 	 *
+	 * @since 4.1.1
+	 *
 	 * @param WP_Upgrader $upgrader_object
 	 * @param array $options
 	 *
@@ -327,6 +359,7 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
+	 * @since 4.1.1
 	 * @return array
 	 */
 	protected function get_settings() {
@@ -350,6 +383,7 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
+	 * @since 4.1.1
 	 * @return string
 	 */
 	protected function get_plugin_version() {
@@ -363,6 +397,8 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
+	 * @since 4.1.1
+	 *
 	 * @param $args
 	 *
 	 * @return string
@@ -377,6 +413,13 @@ class Premium_Upgrader extends Upgrader {
 		return add_query_arg( $args, $url );
 	}
 	
+	/**
+	 * @since 4.1.1
+	 *
+	 * @param string $action
+	 *
+	 * @return string
+	 */
 	protected function get_action_url( $action ) {
 		$args = array( 'wbcr_factory_premium_updates_action' => $action );
 		
@@ -384,6 +427,7 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
+	 * @since 4.1.1
 	 * @return string
 	 */
 	protected function get_activate_premium_url() {
@@ -398,6 +442,7 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Нужно установить или обновить премиум?
 	 *
+	 * @since 4.1.1
 	 * @return bool
 	 */
 	protected function need_intall_or_activate_premium() {
@@ -415,6 +460,7 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Требуется активировать лицензию?
 	 *
+	 * @since 4.1.1
 	 * @return bool
 	 */
 	protected function need_activate_license() {
@@ -424,6 +470,7 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Нужно продлить лицензию?
 	 *
+	 * @since 4.1.1
 	 * @return bool
 	 */
 	protected function need_renew_license() {
@@ -619,6 +666,10 @@ class Premium_Upgrader extends Upgrader {
 		return true;
 	}
 	
+	/**
+	 * @since 4.1.1
+	 * @return bool
+	 */
 	protected function deactivate() {
 		if ( ! $this->plugin->premium->is_install_package() || ! is_plugin_active( $this->plugin_basename ) ) {
 			return false;
@@ -652,6 +703,8 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
+	 * @since 4.1.1
+	 *
 	 * @param array $plugin_data
 	 *
 	 * @throws Exception
@@ -677,38 +730,38 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * Текст уведомления. Уведомление требует установить премиум плагина,
-	 * чтобы открыть дополнительные функции плагина.
-	 *
 	 * @since 4.1.1
-	 * @return string
+	 *
+	 * @param string $type
+	 *
+	 * @return string|null
 	 */
-	private function get_please_install_premium_text() {
+	private function get_notice_text( $type ) {
 		$upgrade_url         = $this->get_action_url( 'install' );
 		$activate_plugin_url = $this->get_activate_premium_url();
 		$cancel_license_url  = $this->get_action_url( 'cancel_license' );
 		
-		if ( ! $this->plugin->premium->is_install_package() ) {
-			return sprintf( __( 'Congratulations, you have activated a premium license! Please install premium add-on to use pro features now.
-        <a href="%s">Install</a> premium add-on or <a href="%s">cancel</a> license.', 'wbcr_factory_000' ), $upgrade_url, $cancel_license_url );
+		$texts = array(
+			'need_activate_license'   => __( 'License activation required. A license is required to get premium plugin updates, as well as to get additional services.', 'wbcr_factory_000' ),
+			'need_renew_license'      => __( 'Your license has expired. You can no longer get premium plugin updates, premium support and your access to Webcraftic services has been suspended.', 'wbcr_factory_000' ),
+			'please_install_premium'  => sprintf( __( 'Congratulations, you have activated a premium license! Please install premium add-on to use pro features now.
+        <a href="%s">Install</a> premium add-on or <a href="%s">cancel</a> license.', 'wbcr_factory_000' ), $upgrade_url, $cancel_license_url ),
+			'please_activate_premium' => sprintf( __( 'Congratulations, you have activated a premium license! Please activate premium add-on to use pro features now.
+        <a href="%s">Activate</a> premium add-on or <a href="%s">cancel</a> license.', 'wbcr_factory_000' ), $activate_plugin_url, $cancel_license_url )
+		);
+		
+		if ( isset( $texts[ $type ] ) ) {
+			
+			/**
+			 * @param array $messages
+			 * @param string $type
+			 * @param string $plugin_name
+			 *
+			 * @since 4.1.1
+			 */
+			return apply_filters( 'wbcr/factory/premium/notice_text', $texts[ $type ], $type, $this->plugin->getPluginName() );
 		}
 		
-		return sprintf( __( 'Congratulations, you have activated a premium license! Please activate premium add-on to use pro features now.
-        <a href="%s">Activate</a> premium add-on or <a href="%s">cancel</a> license.', 'wbcr_factory_000' ), $activate_plugin_url, $cancel_license_url );
-	}
-	
-	/**
-	 * @since 4.1.1
-	 * @return string
-	 */
-	private function get_need_license_activate_text() {
-		return __( 'License activation required. A license is required to get premium plugin updates, as well as to get additional services.', 'wbcr_factory_000' );
-	}
-	
-	/**
-	 * @return string
-	 */
-	private function get_license_expired_text() {
-		return __( 'Your license has expired. You can no longer get premium plugin updates, premium support and your access to Webcraftic services has been suspended.', 'wbcr_factory_000' );
+		return null;
 	}
 }

@@ -10,8 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- *
- *
  * @author Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
  * @link https://webcraftic.com
  * @copyright (c) 2018 Webraftic Ltd
@@ -19,8 +17,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 abstract class Repository {
 	
+	/**
+	 * @var bool
+	 */
 	protected $initialized = false;
 	
+	/**
+	 * @var Wbcr_Factory000_Plugin
+	 */
 	protected $plugin;
 	
 	/**

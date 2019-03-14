@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'FACTORY_000_LOADED' ) ) {
 	return;
 }
+
 define( 'FACTORY_000_LOADED', true );
 
 define( 'FACTORY_000_VERSION', '4.1.1' );
@@ -25,10 +26,6 @@ define( 'FACTORY_000_DIR', dirname( __FILE__ ) );
 define( 'FACTORY_000_URL', plugins_url( null, __FILE__ ) );
 
 load_plugin_textdomain( 'wbcr_factory_000', false, dirname( plugin_basename( __FILE__ ) ) . '/langs' );
-
-/*if ( ! class_exists( 'WBCR\Factory000\Options' ) ) {
-	// todo: предотвратить подключение файлов, если модуль уже загружен
-}*/
 
 #comp merge
 require_once( FACTORY_000_DIR . '/includes/functions.php' );

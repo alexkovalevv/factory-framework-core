@@ -10,8 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- *
- *
  * @author Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
  * @link https://webcraftic.com
  * @copyright (c) 2018 Webraftic Ltd
