@@ -122,13 +122,17 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	/**
 	 * Устанавливает текстовый домен для плагина
 	 */
-	public function setTextDomain( $domain, $plugin_dir ) {
-		$locale = apply_filters( 'plugin_locale', is_admin() ? get_user_locale() : get_locale(), $domain );
+	public function set_text_domain( $domain ) {
+		if ( empty( $this->plugin_text_domain ) ) {
+			return;
+		}
 		
-		$mofile = $domain . '-' . $locale . '.mo';
+		$locale = apply_filters( 'plugin_locale', is_admin() ? get_user_locale() : get_locale(), $this->plugin_text_domain );
 		
-		if ( ! load_textdomain( $domain, $plugin_dir . '/languages/' . $mofile ) ) {
-			load_muplugin_textdomain( $domain );
+		$mofile = $this->plugin_text_domain . '-' . $locale . '.mo';
+		
+		if ( ! load_textdomain( $this->plugin_text_domain, $this->paths->absolute . '/languages/' . $mofile ) ) {
+			load_muplugin_textdomain( $this->plugin_text_domain );
 		}
 	}
 	
@@ -370,12 +374,11 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	 */
 	private function register_plugin_hooks() {
 		
+		add_action( 'plugins_loaded', array( $this, 'set_text_domain' ) );
+		
 		if ( is_admin() ) {
 			add_filter( 'wbcr_factory_000_core_admin_allow_multisite', '__return_true' );
-		}
-		
-		// register activation hooks
-		if ( is_admin() ) {
+			
 			register_activation_hook( $this->get_paths()->main_file, array( $this, 'activation_hook' ) );
 			register_deactivation_hook( $this->get_paths()->main_file, array( $this, 'deactivation_hook' ) );
 		}
