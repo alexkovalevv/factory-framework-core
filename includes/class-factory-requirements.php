@@ -141,7 +141,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Requirements' ) ) {
 			add_action( 'admin_init', array( $this, 'register_notices' ) );
 		}
 		
-		public function get_plugin_verstion() {
+		public function get_plugin_version() {
 			return $this->plugin_version;
 		}
 		
