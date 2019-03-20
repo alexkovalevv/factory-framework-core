@@ -143,9 +143,10 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	 * @throws Exception
 	 */
 	public function registerPage( $class_name, $file_path ) {
-		if ( $this->isNetworkActive() && ! is_network_admin() ) {
-			return;
-		}
+		// todo: https://webcraftic.atlassian.net/projects/PCS/issues/PCS-88
+//		if ( $this->isNetworkActive() && ! is_network_admin() ) {
+//			return;
+//		}
 		
 		if ( ! file_exists( $file_path ) ) {
 			throw new Exception( 'The page file was not found by the path {' . $file_path . '} you set.' );
