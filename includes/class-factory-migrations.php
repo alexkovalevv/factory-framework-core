@@ -186,9 +186,9 @@ class Migrations {
 
 		if ( ! $activated ) {
 			if ( $this->plugin->isNetworkActive() ) {
-				update_site_option( $this->plugin->getOptionName( 'plugin_migration_error' ), time() );
+				update_site_option( $this->plugin->getOptionName( 'plugin_activated' ), time() );
 			} else {
-				update_option( $this->plugin->getOptionName( 'plugin_migration_error' ), time() );
+				update_option( $this->plugin->getOptionName( 'plugin_activated' ), time() );
 			}
 		}
 	}
@@ -214,9 +214,9 @@ class Migrations {
 		}
 
 		if ( $this->plugin->isNetworkActive() ) {
-			$plugin_version = get_site_option( $this->plugin->getOptionName( 'plugin_version' ) );
+			$plugin_version = get_site_option( $this->plugin->getOptionName( 'plugin_version' ), null );
 		} else {
-			$plugin_version = get_option( $this->plugin->getOptionName( 'plugin_version' ) );
+			$plugin_version = get_option( $this->plugin->getOptionName( 'plugin_version' ), null );
 		}
 
 		if ( ! empty( $plugin_version ) ) {
