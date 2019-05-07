@@ -33,13 +33,13 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Manager constructor.
 	 *
-	 * @since 4.1.1
-	 *
 	 * @param Wbcr_Factory000_Plugin $plugin
 	 * @param $args
 	 * @param bool $is_premium
 	 *
 	 * @throws Exception
+	 * @since 4.1.1
+	 *
 	 */
 	public function __construct( Wbcr_Factory000_Plugin $plugin ) {
 		parent::__construct( $plugin );
@@ -47,10 +47,6 @@ class Premium_Upgrader extends Upgrader {
 		$this->plugin_basename      = null;
 		$this->plugin_main_file     = null;
 		$this->plugin_absolute_path = null;
-		
-		// todo: продумать поведение апгрейдера, если лицензия не активирована.
-		// todo: что делать, если лицензия деактивирована, а премиум пакет установлен?
-		// todo: как подчищать информацию при удалении пакета?
 		
 		if ( $this->plugin->premium->is_activate() && $this->plugin->premium->is_install_package() ) {
 			$premium_package = $this->plugin->premium->get_package_data();
@@ -81,8 +77,8 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
 	 * @throws Exception
+	 * @since 4.1.1
 	 */
 	protected function init_hooks() {
 		parent::init_hooks();
@@ -153,10 +149,11 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Удаляет данные о пакете, если пользовать удалил премиум плагин
 	 *
-	 * @since 4.1.1
-	 *
 	 * @param $plugin_basename
 	 * @param $success
+	 *
+	 * @since 4.1.1
+	 *
 	 */
 	public function delete_plugin_hook( $plugin_basename, $success ) {
 		if ( ! $this->plugin->premium->is_install_package() ) {
@@ -173,11 +170,11 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Выводит уведомление на всех страницах админ панели Wordpress
 	 *
-	 * @since 4.1.1
-	 *
 	 * @param $notices
 	 *
 	 * @return array
+	 * @since 4.1.1
+	 *
 	 */
 	public function admin_notices_hook( $notices ) {
 		
@@ -224,12 +221,12 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Выводит уведомление внутри интерфейса плагина, на всех страницах плагина.
 	 *
-	 * @since 4.1.1
-	 *
 	 * @param Wbcr_Factory000_Plugin $plugin
 	 * @param Wbcr_FactoryPages000_ImpressiveThemplate $obj
 	 *
 	 * @return void
+	 * @since 4.1.1
+	 *
 	 */
 	public function install_notice_in_plugin_interface( $plugin, $obj ) {
 		if ( $plugin->getPluginName() != $this->plugin->getPluginName() ) {
@@ -257,14 +254,14 @@ class Premium_Upgrader extends Upgrader {
 	 * Выводит уведомление в строке плагина (на странице плагинов),
 	 * что нужно установить премиум плагин.
 	 *
-	 * @since 4.1.1
-	 * @see WP_Plugins_List_Table
-	 *
 	 * @param string $plugin_file
 	 * @param array $plugin_data
 	 * @param string $status
 	 *
 	 * @return void
+	 * @since 4.1.1
+	 * @see WP_Plugins_List_Table
+	 *
 	 */
 	public function notice_in_plugin_row( $plugin_file, $plugin_data, $status ) {
 		
@@ -302,8 +299,8 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Печатает стили для уведомления о загрузке премиум версии на странице плагинов.
 	 *
-	 * @since 4.1.1
 	 * @return void
+	 * @since 4.1.1
 	 */
 	public function print_styles_for_plugin_row() {
 		
@@ -343,12 +340,12 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Обновляет данные о премиум пакете в базе данных, после обновления плагина.
 	 *
-	 * @since 4.1.1
-	 *
 	 * @param WP_Upgrader $upgrader_object
 	 * @param array $options
 	 *
 	 * @throws Exception
+	 * @since 4.1.1
+	 *
 	 */
 	public function upgrader_process_complete_hook( $upgrader_object, $options ) {
 		if ( ! empty( $options ) && $options['action'] == 'update' && $options['type'] == 'plugin' ) {
@@ -359,8 +356,8 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
 	 * @return array
+	 * @since 4.1.1
 	 */
 	protected function get_settings() {
 		$settings = $this->plugin->getPluginInfoAttr( 'license_settings' );
@@ -383,8 +380,8 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
 	 * @return string
+	 * @since 4.1.1
 	 */
 	protected function get_plugin_version() {
 		if ( ! $this->plugin->premium->is_install_package() ) {
@@ -397,11 +394,11 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
-	 *
 	 * @param $args
 	 *
 	 * @return string
+	 * @since 4.1.1
+	 *
 	 */
 	protected function get_admin_url( $args ) {
 		$url = admin_url( 'plugins.php', $args );
@@ -414,11 +411,11 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
-	 *
 	 * @param string $action
 	 *
 	 * @return string
+	 * @since 4.1.1
+	 *
 	 */
 	protected function get_action_url( $action ) {
 		$args = array( 'wbcr_factory_premium_updates_action' => $action );
@@ -427,8 +424,8 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
 	 * @return string
+	 * @since 4.1.1
 	 */
 	protected function get_activate_premium_url() {
 		$args = array(
@@ -442,8 +439,8 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Нужно установить или обновить премиум?
 	 *
-	 * @since 4.1.1
 	 * @return bool
+	 * @since 4.1.1
 	 */
 	protected function need_intall_or_activate_premium() {
 		if ( $this->plugin->premium->is_activate() && $this->plugin->premium->is_active() ) {
@@ -460,8 +457,8 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Требуется активировать лицензию?
 	 *
-	 * @since 4.1.1
 	 * @return bool
+	 * @since 4.1.1
 	 */
 	protected function need_activate_license() {
 		return ! $this->plugin->premium->is_activate() && $this->plugin->premium->is_install_package();
@@ -470,16 +467,16 @@ class Premium_Upgrader extends Upgrader {
 	/**
 	 * Нужно продлить лицензию?
 	 *
-	 * @since 4.1.1
 	 * @return bool
+	 * @since 4.1.1
 	 */
 	protected function need_renew_license() {
 		return $this->plugin->premium->is_activate() && ! $this->plugin->premium->is_active();
 	}
 	
 	/**
-	 * @since 4.1.1
 	 * @throws Exception
+	 * @since 4.1.1
 	 */
 	protected function install() {
 		global $wp_filesystem;
@@ -667,8 +664,8 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
 	 * @return bool
+	 * @since 4.1.1
 	 */
 	protected function deactivate() {
 		if ( ! $this->plugin->premium->is_install_package() || ! is_plugin_active( $this->plugin_basename ) ) {
@@ -703,11 +700,11 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
-	 *
 	 * @param array $plugin_data
 	 *
 	 * @throws Exception
+	 * @since 4.1.1
+	 *
 	 */
 	protected function update_package_data() {
 		
@@ -730,11 +727,11 @@ class Premium_Upgrader extends Upgrader {
 	}
 	
 	/**
-	 * @since 4.1.1
-	 *
 	 * @param string $type
 	 *
 	 * @return string|null
+	 * @since 4.1.1
+	 *
 	 */
 	private function get_notice_text( $type ) {
 		$upgrade_url         = $this->get_action_url( 'install' );

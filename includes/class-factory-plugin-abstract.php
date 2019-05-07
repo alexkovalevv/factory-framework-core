@@ -282,14 +282,25 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	/**
 	 * Загружает аддоны для плагина, как часть проекта, а не как отдельный плагин
 	 *
-	 * @param array $addons   - массив со списком загружаемых аддонов.
-	 *                        array(
-	 *                        'hide_login_page' => -  ключ, идентификатора массива с информацией об аддоне
-	 *                        array(
-	 *                        'WHLP_Plugin', - имя основного класса аддона
-	 *                        WCL_PLUGIN_DIR . '/components/hide-login-page/hide-login-page.php' - пусть к основному файлу аддона
-	 *                        )
-	 *                        );
+	 * <<<<<<< HEAD
+	 * @param array $addons         - массив со списком загружаемых аддонов.
+	 *                              array(
+	 *                              'hide_login_page' => -  ключ, идентификатора массива с информацией об аддоне
+	 *                              array(
+	 *                              'WHLP_Plugin', - имя основного класса аддона
+	 *                              WCL_PLUGIN_DIR . '/components/hide-login-page/hide-login-page.php' - пусть к основному файлу аддона
+	 *                              )
+	 *                              );
+	 *                              =======
+	 * @param array $addons         - массив со списком загружаемых аддонов.
+	 *                              array(
+	 *                              'hide_login_page' => -  ключ, идентификатора массива с информацией об аддоне
+	 *                              array(
+	 *                              'WHLP_Plugin', - имя основного класса аддона
+	 *                              WCL_PLUGIN_DIR . '/components/hide-login-page/hide-login-page.php' - пусть к
+	 *                              основному файлу аддона
+	 *                              ));
+	 *                              >>>>>>> a0fb2b899d6e297fa06a9a17db5d5f75925e7026
 	 */
 	protected function loadAddons( $addons ) {
 		if ( empty( $addons ) ) {
@@ -467,7 +478,7 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	 * @throws Exception
 	 */
 	protected function init_plugin_updates() {
-		if ( ! empty( $this->updates_settings ) ) {
+		if ( $this->has_updates ) {
 			new WBCR\Factory_000\Updates\Upgrader( $this );
 		}
 	}
@@ -493,7 +504,9 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 		$this->premium = WBCR\Factory_000\Premium\Manager::instance( $this, $this->license_settings );
 
 		// Подключаем премиум апгрейдер
-		new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
+		if ( isset( $this->license_settings['has_updates'] ) && $this->license_settings['has_updates'] ) {
+			new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
+		}
 	}
 
 	/**
