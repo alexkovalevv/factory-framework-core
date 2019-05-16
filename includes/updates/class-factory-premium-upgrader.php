@@ -100,7 +100,7 @@ class Premium_Upgrader extends Upgrader {
 			}
 			
 			add_action( "admin_print_styles-plugins.php", array( $this, "print_styles_for_plugin_row" ) );
-			add_action( "wbcr_factory_notices_000_list", array( $this, "admin_notices_hook" ) );
+			add_action( "wbcr_factory_notices_000_list", array( $this, "admin_notices_hook" ), 10, 2 );
 			add_action( 'wbcr/factory/pages/impressive/print_all_notices', array(
 				$this,
 				'install_notice_in_plugin_interface'
@@ -176,9 +176,9 @@ class Premium_Upgrader extends Upgrader {
 	 * @since 4.1.1
 	 *
 	 */
-	public function admin_notices_hook( $notices ) {
-		
-		if ( ! current_user_can( 'update_plugins' ) ) {
+	public function admin_notices_hook( $notices, $plugin_name ) {
+
+		if ( $plugin_name !== $this->plugin->getPluginName() || ! current_user_can( 'update_plugins' ) ) {
 			return $notices;
 		}
 		
