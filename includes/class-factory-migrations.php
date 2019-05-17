@@ -51,7 +51,7 @@ class Migrations {
 		if ( is_admin() ) {
 			add_action( "admin_init", [ $this, "check_migrations" ] );
 
-			add_action( "wbcr/factory/plugin_{$plugin_name}_activation", [ $this, 'activation_hook' ] );
+			add_action( "wbcr/factory/plugin_{$plugin_name}_activated", [ $this, 'activation_hook' ] );
 			add_action( "wbcr_factory_notices_000_list", [ $this, "debug_bar_notice" ] );
 			add_action( "wbcr_factory_notices_000_list", [ $this, "migration_error_notice" ] );
 		}
@@ -177,9 +177,9 @@ class Migrations {
 	 * was activated for the first time.
 	 */
 	public function activation_hook() {
-		if ( $this->need_migration() && ! $this->is_debug() ) {
+		/*if ( $this->need_migration() && ! $this->is_debug() ) {
 			$this->make_migration();
-		}
+		}*/
 
 		// just time to know when the plugin was activated the first time
 		$activated = $this->get_plugin_activated_time();
