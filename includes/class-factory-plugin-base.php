@@ -368,17 +368,14 @@ class  Wbcr_Factory000_Base {
 		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
 			require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
 		}
-		
+
 		$activate = is_plugin_active_for_network( $this->get_paths()->basename );
-		
+
 		if ( ! $activate && $this->isNetworkAdmin() && isset( $_GET['action'] ) && $_GET['action'] == 'activate' ) {
-			$is_activate_for_network = isset( $_GET['plugin_status'] ) && $_GET['plugin_status'] == 'all';
-			
-			if ( $is_activate_for_network ) {
-				return true;
-			}
+			return isset( $_GET['networkwide'] ) && 1 == (int)$_GET['networkwide'];
+
 		}
-		
+
 		return $activate;
 	}
 	

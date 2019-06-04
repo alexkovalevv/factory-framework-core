@@ -224,6 +224,8 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 		}
 
 		/**
+		 * wbcr_factory_000_plugin_activation
+		 *
 		 * @since 4.1.1 - deprecated
 		 */
 		wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_activation', [
@@ -231,21 +233,45 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 		], '4.1.1', "wbcr/factory/plugin_activation" );
 
 		/**
-		 * @since 4.1.1 - added
+		 * wbcr/factory/plugin_activation
+		 *
+		 * @since 4.1.2 - deprecated
 		 */
-		do_action( 'wbcr/factory/plugin_activation', $this->plugin_name );
+		wbcr_factory_000_do_action_deprecated( 'wbcr/factory/plugin_activation', [
+			$this
+		], '4.1.2', "wbcr/factory/before_plugin_activation" );
 
 		/**
+		 * wbcr/factory/before_plugin_activation
+		 *
+		 * @since 4.1.2 - added
+		 */
+		do_action( 'wbcr/factory/before_plugin_activation', $this );
+
+		/**
+		 * # wbcr/factory/plugin_{$this->plugin_name}_activation
+		 *
+		 * @since 4.1.2 - deprecated
+		 */
+		wbcr_factory_000_do_action_deprecated( "wbcr/factory/plugin_{$this->plugin_name}_activation", [
+			$this
+		], '4.1.2', "wbcr/factory/before_plugin_{$this->plugin_name}_activation" );
+
+		/**
+		 * wbcr_factory_000_plugin_activation_' . $this->plugin_name
+		 *
 		 * @since 4.1.1 - deprecated
 		 */
 		wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_activation_' . $this->plugin_name, [
 			$this
-		], '4.1.1', "wbcr/factory/plugin_{$this->plugin_name}_activation" );
+		], '4.1.1', "wbcr/factory/before_plugin_{$this->plugin_name}_activation" );
 
 		/**
-		 * @since 4.1.1 - added
+		 * wbcr/factory/plugin_{$this->plugin_name}_activation
+		 *
+		 * @since 4.1.2 - added
 		 */
-		do_action( "wbcr/factory/plugin_{$this->plugin_name}_activation" );
+		do_action( "wbcr/factory/plugin_{$this->plugin_name}_activation", $this );
 
 		if ( ! empty( $this->activator_class ) ) {
 			foreach ( (array) $this->activator_class as $activator_class ) {
@@ -253,6 +279,97 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 				$activator->activate();
 			}
 		}
+
+		/**
+		 * @since 4.1.2 - added
+		 */
+		do_action( 'wbcr/factory/plugin_activated', $this );
+
+		/**
+		 * @since 4.1.2 - added
+		 */
+		do_action( "wbcr/factory/plugin_{$this->plugin_name}_activated", $this );
+	}
+
+	/**
+	 * It's invoked on plugin deactionvation. Don't excite it directly.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function deactivation_hook() {
+
+		/**
+		 * @since 4.1.1 - change  hook name
+		 */
+		if ( apply_filters( "wbcr/factory_000/cancel_plugin_deactivation_{$this->plugin_name}", false ) ) {
+			return;
+		}
+
+		/**
+		 * wbcr_factory_000_plugin_deactivation
+		 *
+		 * @since 4.1.1 - deprecated
+		 */
+		wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_deactivation', [
+			$this
+		], '4.1.1', "wbcr/factory/plugin_deactivation" );
+
+		/**
+		 * wbcr/factory/plugin_deactivation
+		 *
+		 * @since 4.1.2 - deprecated
+		 */
+		wbcr_factory_000_do_action_deprecated( 'wbcr/factory/plugin_deactivation', [
+			$this
+		], '4.1.2', "wbcr/factory/before_plugin_deactivation" );
+
+		/**
+		 * wbcr/factory/plugin_deactivation
+		 *
+		 * @since 4.1.2 - added
+		 */
+		do_action( 'wbcr/factory/plugin_deactivation', $this );
+
+		/**
+		 * wbcr_factory_000_plugin_deactivation_ . $this->plugin_name
+		 *
+		 * @since 4.1.1 - deprecated
+		 */
+		wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_deactivation_' . $this->plugin_name, [
+			$this
+		], '4.1.1', "wbcr/factory/before_plugin_{$this->plugin_name}_deactivation" );
+
+		/**
+		 * wbcr/factory/plugin_{$this->plugin_name}_deactivation
+		 *
+		 * @since 4.1.2 - deprecated
+		 */
+		wbcr_factory_000_do_action_deprecated( "wbcr/factory/plugin_{$this->plugin_name}_deactivation", [
+			$this
+		], '4.1.2', "wbcr/factory/before_plugin_{$this->plugin_name}_deactivation" );
+
+		/**
+		 * @since 4.1.2 - added
+		 */
+		do_action( "wbcr/factory/before_plugin_{$this->plugin_name}_deactivation" );
+
+		if ( ! empty( $this->activator_class ) ) {
+			foreach ( (array) $this->activator_class as $activator_class ) {
+				$activator = new $activator_class( $this );
+				$activator->deactivate();
+			}
+		}
+
+		/**
+		 * @since 4.1.2 - added
+		 */
+		do_action( 'wbcr/factory/plugin_deactivated', $this );
+
+		/**
+		 * @since 4.1.2 - added
+		 */
+		do_action( "wbcr/factory/plugin_{$this->plugin_name}_deactivated", $this );
 	}
 
 	/**
@@ -281,15 +398,6 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 
 	/**
 	 * Загружает аддоны для плагина, как часть проекта, а не как отдельный плагин
-	 *
-	 * @param array $addons         - массив со списком загружаемых аддонов.
-	 *                              array(
-	 *                              'hide_login_page' => -  ключ, идентификатора массива с информацией об аддоне
-	 *                              array(
-	 *                              'WHLP_Plugin', - имя основного класса аддона
-	 *                              WCL_PLUGIN_DIR . '/components/hide-login-page/hide-login-page.php' - пусть к
-	 *                              основному файлу аддона
-	 *                              ));
 	 */
 	protected function loadAddons( $addons ) {
 		if ( empty( $addons ) ) {
@@ -362,7 +470,7 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 		/**
 		 * @since 4.1.1 - deprecated
 		 */
-		wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, [], '4.1.1', "wbcr/factory/plugin_activation" );
+		wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_core_modules_loaded-' . $this->plugin_name, [], '4.1.1', "wbcr/factory_000/modules_loaded-" . $this->plugin_name );
 
 		/**
 		 * @since 4.1.1 - add
@@ -385,53 +493,6 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 
 			register_activation_hook( $this->get_paths()->main_file, [ $this, 'activation_hook' ] );
 			register_deactivation_hook( $this->get_paths()->main_file, [ $this, 'deactivation_hook' ] );
-		}
-	}
-
-	/**
-	 * It's invoked on plugin deactionvation. Don't excite it directly.
-	 *
-	 * @since 1.0.0
-	 * @return void
-	 */
-	public function deactivation_hook() {
-
-		/**
-		 * @since 4.1.1 - change  hook name
-		 */
-		if ( apply_filters( "wbcr/factory_000/cancel_plugin_deactivation_{$this->plugin_name}", false ) ) {
-			return;
-		}
-
-		/**
-		 * @since 4.1.1 - deprecated
-		 */
-		wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_deactivation', [
-			$this
-		], '4.1.1', "wbcr/factory/plugin_deactivation" );
-
-		/**
-		 * @since 4.1.1 - added
-		 */
-		do_action( 'wbcr/factory/plugin_deactivation', $this->plugin_name );
-
-		/**
-		 * @since 4.1.1 - deprecated
-		 */
-		wbcr_factory_000_do_action_deprecated( 'wbcr_factory_000_plugin_deactivation_' . $this->plugin_name, [
-			$this
-		], '4.1.1', "wbcr/factory/plugin_{$this->plugin_name}_deactivation" );
-
-		/**
-		 * @since 4.1.1 - added
-		 */
-		do_action( "wbcr/factory/plugin_{$this->plugin_name}_deactivation" );
-
-		if ( ! empty( $this->activator_class ) ) {
-			foreach ( (array) $this->activator_class as $activator_class ) {
-				$activator = new $activator_class( $this );
-				$activator->deactivate();
-			}
 		}
 	}
 
