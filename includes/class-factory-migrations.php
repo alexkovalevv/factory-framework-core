@@ -187,8 +187,10 @@ class Migrations {
 		if ( ! $activated ) {
 			if ( $this->plugin->isNetworkActive() ) {
 				update_site_option( $this->plugin->getOptionName( 'plugin_activated' ), time() );
+				update_site_option( $this->plugin->getOptionName( 'plugin_version' ), $this->get_current_plugin_version() );
 			} else {
 				update_option( $this->plugin->getOptionName( 'plugin_activated' ), time() );
+				update_option( $this->plugin->getOptionName( 'plugin_version' ), $this->get_current_plugin_version() );
 			}
 		}
 	}

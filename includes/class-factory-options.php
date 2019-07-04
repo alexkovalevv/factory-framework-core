@@ -102,9 +102,9 @@ trait Options {
 	 * @since 4.0.8
 	 *
 	 * @param string $option_name
-	 * @param string $default
+	 * @param mixed $default
 	 *
-	 * @return bool|mixed
+	 * @return mixed
 	 */
 	public function getPopulateOption( $option_name, $default = false ) {
 		if ( $this->isNetworkActive() ) {
