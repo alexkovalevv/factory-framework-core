@@ -5,110 +5,138 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Базовый класс
+ * Базовый класс для создания нового плагина. Полную реализацию класса смотрите в Wbcr_Factory000_Plugin
  *
- * @author Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
- * @link https://webcraftic.com
+ * Документация по классу: https://webcraftic.atlassian.net/wiki/spaces/FFD/pages/392724484/Wbcr+Factory000+Base
+ * Репозиторий: https://github.com/alexkovalevv
+ *
+ * @author        Alex Kovalev <alex.kovalevv@gmail.com>
+ * @since         4.0.8
  * @copyright (c) 2018 Webraftic Ltd
- * @since 4.0.8
  */
 class  Wbcr_Factory000_Base {
-	
+
 	use WBCR\Factory_000\Options;
-	
+
 	/**
-	 * Namespace Prefix among Wordpress Options
+	 * Обязательное свойство. Префикс, используется для создания пространство имен.
+	 * Чаще всего используется на именования опций в базе данных. Также может быть
+	 * использован для именования полей html форм, создания уникальных имен, хуков.
+	 * Пример: wrio_
+	 *
+	 * Для префикса всегда используете нижнее подчеркивание справа!
 	 *
 	 * @var string
 	 */
 	protected $prefix;
-	
+
 	/**
-	 * Plugin title
+	 * Обязательное свойство. Заголовок плагина. Используете в интерфейсе плагина,
+	 * может быть использован в уведомлениях для администратора, чтобы пользователь
+	 * мог понять, с каким плагином он ведет коммуникацию. Пример: Robin image optimizer
 	 *
 	 * @var string
 	 */
 	protected $plugin_title;
-	
+
 	/**
-	 * Plugin name. Valid characters [A-z0-9_-]
+	 * Обязательное свойство. Имя плагина. Используется аналогично префиксу, но с небольшим
+	 * отличием. Имя плагина имеет человеку понятную строку, которую можно использовать в
+	 * именовании хуков, созданию условной логики. Допустимые символы [A-z0-9_].
+	 * Пример: wbcr_clearfy
 	 *
 	 * @var string
 	 */
 	protected $plugin_name;
-	
+
 	/**
-	 * Plugin version. Valid characters [0-9.]
-	 * Example: 1.4.5
+	 * Обязательное свойство. Версия плагина в формате 0.0.0. Допустимые символы [0-9.]
 	 *
 	 * @var string
 	 */
 	protected $plugin_version;
-	
+
 	/**
+	 * Обязательное свойство. Текстовый домен плагина, используется для подключения файлов
+	 * переводов. Рекомендуется использовать slug плагина, идентичный slug в репозитории
+	 * Wordpress.org
+	 *
 	 * @since 4.1.1
 	 * @var string
 	 */
 	protected $plugin_text_domain;
-	
+
 	/**
+	 * Обязательное свойство. Информация для поддержки клиента. Для начала работы плагина,
+	 * достаточно только указать адрес лендинга в атрибут url. На лендинге должны быть
+	 * созданы страницы features, pricing, support, docs. Если страницы (features, pricing,
+	 * support, docs) не могут иметь такие же адреса, вы можете наложить карту адресов в
+	 * атрибуте pages_map. К примеру: я создал страницу "Pro Features" и она имеет адрес
+	 * {site}/premium-features, для pages_map в атрибуте features, я указал, что адрес
+	 * страницы со списком функций имеет слаг premium-features. Теперь плагин будет понимать,
+	 * что адрес страницы со списком функций будет таким:
+	 * https://robin-image-optimizer.webcraftic.com/premium-features.
+	 *
+	 * Это свойство заполняется для того, чтобы в процессе разработки вы могли использовать
+	 * экземпляр класса \WBCR\Factory_000\Entities\Support, для получения информации о сайте плагина.
+	 * Тем самым вы избавляете себя от жесткого прописывания ссылок на лендинг плагина и
+	 * можете изменить все ссылки в одном месте.
+	 *
 	 * @var array
 	 */
 	protected $support_details;
-	
+
 	/**
+	 * Включение/отключение обновлений для бесплатного плагина. Если вашего плагина нет в репозитори
+	 * Wordpress.org, вы можете включить собственный режим обновлений, например через GitHub или
+	 * собственный репозиторий. Если установлено true, плагин будет проверять наличие обновлений
+	 * для этого плагина.
+	 *
 	 * @var bool
 	 */
 	protected $has_updates = false;
-	
+
 	/**
-	 * Optional. Settings for plugin updates from a remote repository.
+	 * Настройка обновлений для бесплатного плагина. Если вы хотите настроить обновления для
+	 * бесплатного плагина через собственный репозиторий (например: github), вам нужно указать имя
+	 * репозитория и slug плагина. Slug может быть идентичен имени репозитория в github. Для Wordpress.org
+	 * эти настройки не обязательны, так как в wordpress ядре есть встроенные функции для обновлений
+	 * плагинов и тем.
 	 *
-	 * @var array {
-	 *
-	 *    Update settings for free plugin.
-	 *
-	 *    {type} string repository          Type where we download plugin updates
-	 *                                      (wordpress | freemius | other)
-	 *
-	 *    {type} string slug                Plugin slug
-	 *
-	 *    {type} array rollback             Settings for rollback to the previous version of
-	 *                                      the plugin, will gain only one option prev_stable_version,
-	 *                                      you must specify previous version of the plugin         *
-	 * }
+	 * @var array
 	 */
-	protected $updates_settings = array();
-	
+	protected $updates_settings = [];
+
 	/**
-	 * Does plugin have a premium version?
+	 * Включение/отключение премиум версии для плагина. Если вы создаете бесплатный плагин и хотите
+	 * реализовать для него премиум версию, вам нужно начать с этого свойства. Если свойство установлено,
+	 * как true, при инициализации плагина будут подключены функции лицензирования, проверки обновлений
+	 * для премиум версии.
 	 *
 	 * @var bool
 	 */
 	protected $has_premium = false;
-	
+
 	/**
-	 * Optional. Settings for download, update and upgrage to premium of the plugin.
+	 * Настройки лицензирования. Лицензирование плагина может быть реализовано для любого провайдера,
+	 * к примеру: freemius, codecanyon, templatemonster, вам нужно указать только настройки для
+	 * взаимодействия с выбранным вами провайдером. Каждая реализация провайдера лицензий может иметь
+	 * индивидуальный настройки, в этом примере приведены настройки для freemius провайдера
+	 * WBCR\Factory_000\Premium\Provider > WBCR\Factory_Freemius_000\Premium\Provider
 	 *
-	 * @var array {
-	 *      {type} string license_provider            Store where premium plugin was sold (freemius | codecanyon | template_monster)
-	 *      {type} string plugin_id                   Plugin id, only for freemius
-	 *      {type} string public_key                  Plugin public key, only for freemius
-	 *      {type} string slug                        Plugin name, only for freemius
+	 * На текущий момент существует только реализация для freemius провайдера.
 	 *
-	 *      {type} array  premium_plugin_updates {
-	 *              Update settings for free plugin.
+	 * Для премиум плагина вы должны также указать настройки обновлений. Атрибут has_updates
+	 * включает/отключает обновления для премиум плагина, в атрибуте updates_settings вы указываете
+	 * дополнительные настройки обновлений.
 	 *
-	 *              {type} array rollback             Settings for rollback to the previous version of
-	 *                                                the plugin, will gain only one option prev_stable_version,
-	 *                                                you must specify previous version of the plugin         *
-	 *      }
-	 * }
+	 * @var array
 	 */
-	protected $license_settings = array();
-	
+	protected $license_settings = [];
+
 	/**
-	 * Required. Framework modules needed to develop a plugin.
+	 * Обязательное свойство. Подключаемые модули фреймворка. Модули фреймворка позволяют расширять его
+	 * функциональность.
 	 *
 	 * @var array {
 	 * Array with information about the loadable module
@@ -120,85 +148,108 @@ class  Wbcr_Factory000_Base {
 	 *                                  all    - Module will be loaded everywhere
 	 * }
 	 */
-	protected $load_factory_modules = array(
-		array( 'libs/factory/bootstrap', 'factory_bootstrap_000', 'admin' ),
-		array( 'libs/factory/forms', 'factory_forms_000', 'admin' ),
-		array( 'libs/factory/pages', 'factory_pages_000', 'admin' ),
-	);
-	
-	
+	protected $load_factory_modules = [
+		[ 'libs/factory/bootstrap', 'factory_bootstrap_000', 'admin' ],
+		[ 'libs/factory/forms', 'factory_forms_000', 'admin' ],
+		[ 'libs/factory/pages', 'factory_pages_000', 'admin' ],
+	];
+
+
 	/**
+	 * Экземпляр класса \WBCR\Factory_000\Entities\Support используется для получения информации
+	 * о сайте плагина. Чаще всего используется для получения ссылки на страницу с тарифами или
+	 * ссылки на форму обратной связи. Встроен механизм отслеживания по utm меткам.
+	 *
 	 * @var \WBCR\Factory_000\Entities\Support
 	 */
 	protected $support;
-	
+
 	/**
+	 * Экземпляр класса \WBCR\Factory_000\Entities\Paths используется для получения информации о
+	 * путях плагина. Часто используется для получения путей или ссылок на место хранения плагина
+	 * или его входного файла.
+	 *
 	 * @var \WBCR\Factory_000\Entities\Paths
 	 */
 	protected $paths;
-	
+
 	/**
+	 * Абсолютный путь к входному файлу плагина: C://server/site.dev/wp-content/plugins/plugin_name/plugin_name.php
+	 *
 	 * @var string
 	 */
 	private $plugin_file;
-	
+
 	/**
+	 * Свойство хранит сырые настройки плагина, а также дополнительные настройки, которые не описаны
+	 * в интерфейсе класса.
+	 *
 	 * @var array
 	 */
 	private $plugin_data;
-	
+
 	/**
+	 * Конструктор:
+	 * - Заполняет свойства класса из сырых данных плагина
+	 * - Выполняет проверку на обязательные настройки
+	 * - Инициализирует сущности support и paths
+	 *
 	 * @since 4.1.1 - добавил две сущности support, paths. Удалил свойства, plugin_build
 	 *                plugin_assembly, main_file, plugin_root, relative_path, plugin_url
 	 * @since 4.0.8 - добавлена дополнительная логика
 	 *
 	 * @param string $plugin_file
-	 * @param array $data
+	 * @param array  $data
 	 *
 	 * @throws Exception
 	 */
 	public function __construct( $plugin_file, $data ) {
 		$this->plugin_file = $plugin_file;
 		$this->plugin_data = $data;
-		
+
 		foreach ( (array) $data as $option_name => $option_value ) {
 			if ( property_exists( $this, $option_name ) ) {
 				$this->$option_name = $option_value;
 			}
 		}
-		
+
 		if ( empty( $this->prefix ) || empty( $this->plugin_name ) || empty( $this->plugin_title ) || empty( $this->plugin_version ) || empty( $this->plugin_text_domain ) ) {
 			throw new Exception( 'One of the required attributes has not been passed (prefix, plugin_title, plugin_name, plugin_version, plugin_text_domain).' );
 		}
-		
+
 		$this->support = new \WBCR\Factory_000\Entities\Support( $this->support_details );
 		$this->paths   = new \WBCR\Factory_000\Entities\Paths( $plugin_file );
-		
+
 		// used only in the module 'updates'
 		$this->plugin_slug = ! empty( $this->plugin_name ) ? $this->plugin_name : basename( $plugin_file );
 	}
-	
+
 	/**
-	 * @param $name
+	 * При обновлении фреймворка, некоторые свойства класса были удалены. Однако плагины на старом
+	 * фреймворке по прежнему используют удаленные свойства. С помощью этого магического метода мы
+	 * добавляем совместимость со старыми плагинами, но при этом выводим предупреждение, что нужно
+	 * обновить некоторые свойства.
 	 *
-	 * @return string|null
+	 * @param string $name   Имя свойства класса.
+	 *
+	 * @return mixed
 	 */
 	public function __get( $name ) {
-		
-		$deprecated_props = array(
+
+		$deprecated_props = [
 			'plugin_build',
 			'plugin_assembly',
 			'main_file',
 			'plugin_root',
 			'relative_path',
 			'plugin_url'
-		);
-		
+		];
+
 		if ( in_array( $name, $deprecated_props ) ) {
 			$deprecated_message = 'In version 4.1.1 of the Factory framework, the class properties ';
 			$deprecated_message .= '(' . implode( ',', $deprecated_props ) . ')';
 			$deprecated_message .= 'have been removed. To get plugin paths, use the new paths property.' . PHP_EOL;
-			
+
 			$backtrace = debug_backtrace();
 			if ( ! empty( $backtrace ) && isset( $backtrace[1] ) ) {
 				$deprecated_message .= 'BACKTRACE:(';
@@ -207,9 +258,9 @@ class  Wbcr_Factory000_Base {
 				$deprecated_message .= 'Line: ' . $backtrace[1]['line'];
 				$deprecated_message .= ')';
 			}
-			
+
 			_deprecated_argument( __METHOD__, '4.1.1', $deprecated_message );
-			
+
 			switch ( $name ) {
 				case 'plugin_build':
 					return null;
@@ -231,28 +282,32 @@ class  Wbcr_Factory000_Base {
 					break;
 			}
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
-	 * @param $name
-	 * @param $arguments
+	 * При обновлении фреймворка, некоторые методы класса были удалены. Однако плагины на старом фреймворке
+	 * по прежнему используют удаленные методы. С помощью этого магического метода мы добавляем совместимость
+	 * со старыми плагинами, но при этом выводим предупреждение, что нужно обновить некоторые методы.
+	 *
+	 * @param string $name        Имя метода класса.
+	 * @param array  $arguments   Массив аргументов метода класса.
 	 *
 	 * @return stdClass|null
 	 * @throws Exception
 	 */
 	public function __call( $name, $arguments ) {
-		
-		$deprecated_methods = array(
+
+		$deprecated_methods = [
 			'getPluginBuild',
 			'getPluginAssembly',
 			'getPluginPathInfo'
-		);
-		
+		];
+
 		if ( in_array( $name, $deprecated_methods ) ) {
 			$deprecated_message = 'In version 4.1.1 of the Factory framework, methods (' . implode( ',', $deprecated_methods ) . ') have been removed.';
-			
+
 			$backtrace = debug_backtrace();
 			if ( ! empty( $backtrace ) && isset( $backtrace[1] ) ) {
 				$deprecated_message .= 'BACKTRACE:(';
@@ -261,61 +316,76 @@ class  Wbcr_Factory000_Base {
 				$deprecated_message .= 'Line: ' . $backtrace[1]['line'];
 				$deprecated_message .= ')';
 			}
-			
+
 			_deprecated_argument( __METHOD__, '4.1.1', $deprecated_message );
-			
+
 			if ( 'getPluginPathInfo' == $name ) {
 				$object = new stdClass;
-				
+
 				$object->main_file     = $this->get_paths()->main_file;
 				$object->plugin_root   = $this->get_paths()->absolute;
 				$object->relative_path = $this->get_paths()->basename;
 				$object->plugin_url    = $this->get_paths()->url;
-				
+
 				return $object;
 			}
 		}
-		
+
 		throw new Exception( "Method {$name} does not exist" );
 	}
-	
+
 	/**
-	 * @return bool
+	 * Проверяет, включен ли премиум для этого плагина или нет.
+	 *
+	 * @return bool Возвращает true, если премиум пакет включен для этого плагина.
+	 * См. Wbcr_Factory000_Base::has_premium
 	 */
 	public function has_premium() {
 		return $this->has_premium;
 	}
-	
+
 	/**
-	 * @return string
+	 * Позволяет получить заголовок плагина.
+	 *
+	 * @return string Возвращает заголовок плагина. См. Wbcr_Factory000_Base::plugin_title
 	 */
 	public function getPluginTitle() {
 		return $this->plugin_title;
 	}
-	
+
 	/**
-	 * @return string
+	 * Позволяет получить префикс плагина.
+	 *
+	 * @return string Возвращает префикс плагина.См. Wbcr_Factory000_Base::prefix
 	 */
 	public function getPrefix() {
 		return $this->prefix;
 	}
-	
+
 	/**
-	 * @return string
+	 * Позволяет получить имя плагина.
+	 *
+	 * @return string Возвращает имя плагина. См. Wbcr_Factory000_Base::plugin_name
 	 */
 	public function getPluginName() {
 		return $this->plugin_name;
 	}
-	
+
 	/**
-	 * @return string
+	 * Позволяет получить версию плагина.
+	 *
+	 * @return string Возвращает версию плагина. См. Wbcr_Factory000_Base::plugin_version
 	 */
 	public function getPluginVersion() {
 		return $this->plugin_version;
 	}
-	
+
 	/**
-	 * @param $attr_name
+	 * Предоставляет доступ к сырым данным плагина. Может быть полезен, если вы хотите получить
+	 * какие-то данные не описанные в интерфейсе этого плагина.
+	 *
+	 * @param string $attr_name   Имя атрибута, который нужно получить. Идентично ключу в массиве
+	 *                            Wbcr_Factory000_Base::plugin_data
 	 *
 	 * @return null
 	 */
@@ -323,45 +393,54 @@ class  Wbcr_Factory000_Base {
 		if ( isset( $this->plugin_data[ $attr_name ] ) ) {
 			return $this->plugin_data[ $attr_name ];
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
+	 * Предоставляет доступ к экземпляру класса \WBCR\Factory_000\Entities\Support.
+	 *
 	 * @return \WBCR\Factory_000\Entities\Support
 	 */
 	public function get_support() {
 		return $this->support;
 	}
-	
+
 	/**
+	 * Предоставляет доступ к экземпляру класса \WBCR\Factory_000\Entities\Paths.
+	 *
 	 * @return \WBCR\Factory_000\Entities\Paths
 	 */
 	public function get_paths() {
 		return $this->paths;
 	}
-	
+
 	/**
-	 * @return object
+	 * Позволяет получить сырые данные плагина в виде объекта StdClass.
+	 *
+	 * @return object Возвращает объект с сырыми данными плагина. См. Wbcr_Factory000_Base::plugin_data
 	 */
 	public function getPluginInfo() {
 		return (object) $this->plugin_data;
 	}
-	
+
 	/**
-	 * Активирован ли сайт в режиме мультисайтов и мы находимся в области суперадминистратора
 	 * TODO: Вынести метод в функции
+	 *
+	 * @since 4.0.8 Добавлен
+	 *
 	 * @return bool
 	 */
 	public function isNetworkAdmin() {
 		return is_multisite() && is_network_admin();
 	}
-	
+
 	/**
-	 * Активирован ли плагин для сети
+	 * Проверяет активирован ли плагин для сети. Если проект работает в режиме мультисайтов..
 	 * TODO: Вынести метод в функции
-	 * @since 4.0.8
-	 * @return bool
+	 *
+	 * @since 4.0.8 Добавлен
+	 * @return bool Если true, плагин активирован для сети или в текущий момент активируется для сети.
 	 */
 	public function isNetworkActive() {
 		// Makes sure the plugin is defined before trying to use it
@@ -372,33 +451,33 @@ class  Wbcr_Factory000_Base {
 		$activate = is_plugin_active_for_network( $this->get_paths()->basename );
 
 		if ( ! $activate && $this->isNetworkAdmin() && isset( $_GET['action'] ) && $_GET['action'] == 'activate' ) {
-			return isset( $_GET['networkwide'] ) && 1 == (int)$_GET['networkwide'];
-
+			return isset( $_GET['networkwide'] ) && 1 == (int) $_GET['networkwide'];
 		}
 
 		return $activate;
 	}
-	
+
 	/**
-	 * Получает список активных сайтов сети
+	 * Позволяет получить все активные сайты сети. Если проект работает в режиме мультисайтов.
 	 * TODO: Вынести метод в функции
+	 *
 	 * @since 4.0.8
 	 * @return array|int
 	 */
-	public function getActiveSites( $args = array( 'archived' => 0, 'mature' => 0, 'spam' => 0, 'deleted' => 0 ) ) {
+	public function getActiveSites( $args = [ 'archived' => 0, 'mature' => 0, 'spam' => 0, 'deleted' => 0 ] ) {
 		global $wp_version;
-		
+
 		if ( version_compare( $wp_version, '4.6', '>=' ) ) {
 			return get_sites( $args );
 		} else {
-			$converted_array = array();
-			
+			$converted_array = [];
+
 			$sites = wp_get_sites( $args );
-			
+
 			if ( empty( $sites ) ) {
 				return $converted_array;
 			}
-			
+
 			foreach ( (array) $sites as $key => $site ) {
 				$obj = new stdClass();
 				foreach ( $site as $attr => $value ) {
@@ -406,7 +485,7 @@ class  Wbcr_Factory000_Base {
 				}
 				$converted_array[ $key ] = $obj;
 			}
-			
+
 			return $converted_array;
 		}
 	}
