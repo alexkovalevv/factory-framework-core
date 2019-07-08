@@ -4,9 +4,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-
 /**
- * The file contains the class to register a plugin in the Factory.
+ * Основной класс для создания плагина.
+ *
+ * Это основной класс плагина. который отвечает за подключение модулей фреймворка, линзирование, обновление,
+ * миграции разрабатываемого плагина. При создании нового плагина, вы должны создать основной класс реализующий
+ * функции плагина, этот класс будет наследовать текущий.
+ *
+ * Смотрите подробную инструкцию по созданию плагина и экземпляра основного класса в документации по созданию
+ * плагина для Wordpress.
+ *
+ * Документация по классу: https://webcraftic.atlassian.net/wiki/spaces/FFD/pages/393052164
+ * Документация по созданию плагина: https://webcraftic.atlassian.net/wiki/spaces/CNCFC/pages/327828
+ * Репозиторий: https://github.com/alexkovalevv
  *
  * @author        Alex Kovalev <alex.kovalevv@gmail.com>
  * @since         1.0.0
@@ -19,11 +29,13 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	/**
 	 * Instance class Wbcr_Factory000_Request, required manages http requests
 	 *
+	 * @see https://webcraftic.atlassian.net/wiki/spaces/FFD/pages/390561806
 	 * @var Wbcr_Factory000_Request
 	 */
 	public $request;
 
 	/**
+	 * @see https://webcraftic.atlassian.net/wiki/spaces/FFD/pages/393936924
 	 * @var \WBCR\Factory_000\Premium\Provider
 	 */
 	public $premium;
@@ -43,28 +55,32 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	public $forms;
 
 	/**
-	 * A class name of an activator to activate the plugin.
+	 * Простой массив со списком зарегистрированных классов унаследованных от Wbcr_Factory000_Activator.
+	 * Классы активации используются для упаковки набора функций, которые нужно выполнить во время
+	 * активации плагина.
 	 *
-	 * @var string
+	 * @var array[] Wbcr_Factory000_Activator
 	 */
 	protected $activator_class = [];
 
 	/**
-	 * Framework modules loaded
+	 * Ассоциативный массив со списком уже загруженных модулей фреймворка. Используется для того, чтобы
+	 * проверить, каких модули уже были загружены, а какие еще нет.
 	 *
 	 * @var array
 	 */
 	private $loaded_factory_modules = [];
 
 	/**
-	 * Plugin components loaded
+	 * Ассоциативный массив со списком аддонов плагина. Аддоны плагина являются частью одного проекта,
+	 * но не как отдельный плагин.
 	 *
 	 * @var array[] Wbcr_Factory000_Plugin
 	 */
 	private $plugin_addons;
 
 	/**
-	 * Creates an instance of Factory plugin.
+	 * Инициализирует компоненты фреймворка и плагина.
 	 *
 	 * @since 1.0.0
 	 *
@@ -108,6 +124,9 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	/* -------------------------------------------------------------*/
 
 	/**
+	 * Устанавливает класс менеджер, которому плагин будет делегировать подключение ресурсов (картинок,
+	 * скриптов, стилей) фреймворка.
+	 *
 	 * @param Wbcr_FactoryBootstrap000_Manager $bootstrap
 	 */
 	public function setBootstap( Wbcr_FactoryBootstrap000_Manager $bootstrap ) {
@@ -115,6 +134,8 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
+	 * Устанавливает класс менеджер, которому будет делегирована работа с html формами фреймворка.
+	 *
 	 * @param Wbcr_FactoryForms000_Manager $forms
 	 */
 	public function setForms( Wbcr_FactoryForms000_Manager $forms ) {
@@ -122,7 +143,13 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
-	 * Устанавливает текстовый домен для плагина
+	 * Устанавливает текстовый домен для плагина. Текстовый домен берется из заголовка входного
+	 * файла плагина.
+	 *
+	 * @since 4.0.8
+	 *
+	 * @see   https://codex.wordpress.org/I18n_for_WordPress_Developers
+	 * @see   https://webcraftic.atlassian.net/wiki/spaces/CNCFC/pages/327828 - документация по входному файлу
 	 */
 	public function set_text_domain( $domain ) {
 		if ( empty( $this->plugin_text_domain ) ) {
@@ -139,8 +166,20 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
-	 * @param $class_name
-	 * @param $file_path
+	 * Все страницы плагина создаются через специальную обертку, за которую отвечает модуль
+	 * фреймворка pages. Разработчик создает собственный класс, унаследованный от
+	 * Wbcr_FactoryPages000_AdminPage, а затем регистрирует его через этот метод.
+	 * Метод выполняет подключение класса страницы и регистрирует его в модуле фреймворка
+	 * pages.
+	 *
+	 * Больше информации о создании и регистрации страниц, вы можете узнать из документации по созданию
+	 * страниц плагина.
+	 *
+	 * @see https://webcraftic.atlassian.net/wiki/spaces/CNCFC/pages/222887949 - документация по созданию страниц
+	 *
+	 * @param string $class_name   Имя регистрируемого класса страницы. Пример: WCL_Page_Name.
+	 *                             Регистрируемый класс должен быть унаследован от класса Wbcr_FactoryPages000_AdminPage.
+	 * @param string $file_path    Абсолютный путь к файлу с классом страницы.
 	 *
 	 * @throws Exception
 	 */
@@ -168,8 +207,14 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
-	 * @param string $class_name
-	 * @param string $path
+	 * Произвольные типы записей в плагине, создаются через специальную обертку, за которую отвечает
+	 * модуль фреймворка types. Разработчик создает собственный класс, унаследованный от
+	 * Wbcr_FactoryTypes000_Type, а затем регистрирует его через этот метод. Метод выполняет
+	 * подключение класса с новым типом записи и регистрирует его в модуле фреймворка types.     *
+	 *
+	 * @param string $class_name   Имя регистрируемого класса страницы. Пример: WCL_Type_Name.
+	 *                             Регистрируемый класс должен быть унаследован от класса Wbcr_FactoryTypes000_Type.
+	 * @param string $file_path    Абсолютный путь к файлу с классом страницы.
 	 *
 	 * @throws Exception
 	 */

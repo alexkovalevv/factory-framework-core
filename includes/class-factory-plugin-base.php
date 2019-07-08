@@ -7,11 +7,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Базовый класс для создания нового плагина. Полную реализацию класса смотрите в Wbcr_Factory000_Plugin
  *
- * Документация по классу: https://webcraftic.atlassian.net/wiki/spaces/FFD/pages/392724484/Wbcr+Factory000+Base
+ * Документация по классу: https://webcraftic.atlassian.net/wiki/spaces/FFD/pages/392724484
+ * Документация по созданию плагина: https://webcraftic.atlassian.net/wiki/spaces/CNCFC/pages/327828
  * Репозиторий: https://github.com/alexkovalevv
  *
  * @author        Alex Kovalev <alex.kovalevv@gmail.com>
- * @since         4.0.8
+ * @since         1.0.0
+ * @package       factory-core
  * @copyright (c) 2018 Webraftic Ltd
  */
 class  Wbcr_Factory000_Base {
