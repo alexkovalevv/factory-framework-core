@@ -107,7 +107,7 @@ if ( ! class_exists( 'Wbcr_Factory000_Requirements' ) ) {
 		 * @param string $plugin_file
 		 * @param array $plugin_info
 		 */
-		function __construct( $plugin_file, array $plugin_info ) {
+		public function __construct( $plugin_file, array $plugin_info ) {
 			
 			foreach ( (array) $plugin_info as $property => $value ) {
 				if ( property_exists( $this, $property ) ) {
