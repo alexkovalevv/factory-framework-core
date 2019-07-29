@@ -52,8 +52,8 @@ class Migrations {
 			add_action( "admin_init", [ $this, "check_migrations" ] );
 
 			add_action( "wbcr/factory/plugin_{$plugin_name}_activated", [ $this, 'activation_hook' ] );
-			add_action( "wbcr_factory_notices_000_list", [ $this, "debug_bar_notice" ] );
-			add_action( "wbcr_factory_notices_000_list", [ $this, "migration_error_notice" ] );
+			add_action( "wbcr_factory_notices_000_list", [ $this, "debug_bar_notice" ], 10, 2 );
+			add_action( "wbcr_factory_notices_000_list", [ $this, "migration_error_notice" ], 10, 2 );
 		}
 	}
 
@@ -105,11 +105,16 @@ class Migrations {
 	 * and framework will intercept them safely for user and display them
 	 * in this notice.
 	 *
-	 * @param array $notices
+	 * @param array  $notices
+	 * @param static $plugin_name
 	 *
 	 * @return array
 	 */
-	public function migration_error_notice( $notices ) {
+	public function migration_error_notice( $notices, $plugin_name ) {
+
+		if ( $this->plugin->getPluginName() !== $plugin_name ) {
+			return $notices;
+		}
 
 		if ( ! $this->is_migration_error() || ! current_user_can( 'update_plugins' ) ) {
 			return $notices;
@@ -141,12 +146,16 @@ class Migrations {
 	 * Debug panel, display some information from the database. Also allows
 	 * perform manual migrations to test new migrations.
 	 *
-	 * @param $notices
+	 * @param array  $notices
+	 * @param string $plugin_name
 	 *
 	 * @return array
 	 */
-	public function debug_bar_notice( $notices ) {
+	public function debug_bar_notice( $notices, $plugin_name ) {
 
+		if ( $this->plugin->getPluginName() !== $plugin_name ) {
+			return $notices;
+		}
 		if ( ! $this->is_debug() || ! current_user_can( 'update_plugins' ) ) {
 			return $notices;
 		}
