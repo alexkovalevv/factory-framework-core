@@ -143,9 +143,12 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
-	 * Устанавливает класс провайдер лицензий в список доступных лицензионных провайдеров
+	 * Устанавливает класс провайдера лицензий
 	 *
-	 * @since  4.1.6
+	 * С помощью этого класса, мы проверяем валидность лицензий и получаем дополнительную информацию
+	 * о лицензии и ее покупателе. Класс используется в премиум менеджере.
+	 *
+	 * @since  4.1.6 - Добавлен
 	 *
 	 * @param string $name         Имя провайдер
 	 * @param string $class_name   Имя класса провайдера
@@ -157,10 +160,27 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
+	 * Регистрируем класс репозитория
+	 *
+	 * С помощью этого класса мы реализиуем доставку и откат обновлений плагина, на сайт пользователя.
+	 * Скачиваение премиум версий происходит по защенному каналу. Класс используется в менеджере обновлений.
+	 *
+	 * @since  4.1.7 - Добавлен
+	 *
+	 * @param string $name         Имя репозитория
+	 * @param string $class_name   Имя класса репозитория
+	 */
+	public function set_update_repository( $name, $class_name ) {
+		if ( ! isset( WBCR\Factory_000\Updates\Upgrader::$repositories[ $name ] ) ) {
+			WBCR\Factory_000\Updates\Upgrader::$repositories[ $name ] = $class_name;
+		}
+	}
+
+	/**
 	 * Устанавливает текстовый домен для плагина. Текстовый домен берется из заголовка входного
 	 * файла плагина.
 	 *
-	 * @since 4.0.8
+	 * @since 4.0.8 - Добавлен
 	 *
 	 * @see   https://codex.wordpress.org/I18n_for_WordPress_Developers
 	 * @see   https://webcraftic.atlassian.net/wiki/spaces/CNCFC/pages/327828 - документация по входному файлу

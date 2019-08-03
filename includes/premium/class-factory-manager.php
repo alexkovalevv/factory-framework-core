@@ -70,7 +70,7 @@ class Manager {
 	public function instance_provider() {
 		$provider_name = $this->get_setting( 'provider' );
 
-		if ( isset( self::$providers[ $provider_name ] ) ) {
+		if ( isset( self::$providers[ $provider_name ] ) && class_exists( self::$providers[ $provider_name ] ) ) {
 			if ( self::$providers[ $provider_name ] instanceof Provider ) {
 				throw new Exception( "Provider {$provider_name} must extend the class WBCR\Factory_000\Premium\Provider interface!" );
 			}

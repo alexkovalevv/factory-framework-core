@@ -5,7 +5,6 @@ namespace WBCR\Factory_000\Updates;
 use Exception;
 use stdClass;
 use Wbcr_Factory000_Plugin;
-use WBCR\Factory_Freemius_000\Updates\Freemius_Repository;
 
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,6 +20,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Upgrader {
 
 	const CHECK_UPDATES_INTERVAL = "43200";
+
+	/**
+	 * Список доступных классов для работы с репозиториями
+	 *
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  4.1.7
+	 * @var array хранит имя репозитория и его имя класса
+	 * [
+	 *  'wordpress' => 'WBCR\Factory_Freemius_000\Updates\Freemius_Repository',
+	 *  'freemius' => '\WBCR\Factory_000\Updates\Wordpress_Repository'
+	 * ]
+	 */
+	public static $repositories = [];
 
 	/**
 	 * Тип апгрейдера, может быть default, premium
@@ -92,6 +104,9 @@ class Upgrader {
 		$this->plugin_main_file     = $plugin->get_paths()->main_file;
 		$this->plugin_absolute_path = $plugin->get_paths()->absolute;
 		$this->is_debug             = defined( 'FACTORY_UPDATES_DEBUG' ) && FACTORY_UPDATES_DEBUG;
+
+		# Добавляем Wordpress репозиторий в список доступных репозиториев по умолчанию
+		self::$repositories['wordpress'] = '\WBCR\Factory_000\Updates\Wordpress_Repository';
 
 		$settings = $this->get_settings();
 
@@ -269,62 +284,16 @@ class Upgrader {
 	 * @throws Exception
 	 */
 	protected function get_repository( $repository_name ) {
-		switch ( $repository_name ) {
-			case 'wordpress':
-				return new Wordpress_Repository( $this->plugin );
-				break;
-			case 'freemius':
-				if ( ! defined( 'FACTORY_FREEMIUS_000_LOADED' ) ) {
-					throw new Exception( 'If you have to get updates from the Freemius repository, you need to install the freemius module.' );
-				}
 
-				return new Freemius_Repository( $this->plugin );
-				break;
-			default:
-				return $this->instance_other_repository( $repository_name );
-				break;
-		}
-	}
+		if ( isset( self::$repositories[ $repository_name ] ) && class_exists( self::$repositories[ $repository_name ] ) ) {
+			if ( self::$repositories[ $repository_name ] instanceof Repository ) {
+				throw new Exception( "Repository {$repository_name} must extend the class WBCR\Factory_000\Updates\Repository interface!" );
+			}
 
-	/**
-	 * @since 4.1.1
-	 *
-	 * @param string $name
-	 * @param bool   $is_premium
-	 *
-	 * @return Repository
-	 * @throws Exception
-	 */
-	protected function instance_other_repository( $name ) {
-		$other_repositories = [];
-
-		/**
-		 * @since 4.1.1
-		 * @type array $other_repositories
-		 */
-		$other_repositories = apply_filters( 'wbcr/factory/updates/repositories', $other_repositories );
-
-		if ( ! isset( $other_repositories[ $name ] ) ) {
-			return null;
+			return new self::$repositories[ $repository_name ]( $this->plugin );
 		}
 
-		$repository_data = $other_repositories[ $name ];
-
-		if ( ! isset( $repository_data['name'] ) || ! isset( $repository_data['class_path'] ) || ! isset( $repository_data['class_name'] ) ) {
-			throw new Exception( 'Repository data must contain the required attributes name, class_path, class_name!' );
-		}
-
-		if ( ! file_exists( $repository_data['class_path'] ) ) {
-			throw new Exception( 'File with new repository class not found. Please check the correctness of used path: ' . $repository_data['class_path'] );
-		}
-
-		if ( ! class_exists( $repository_data['class_name'] ) ) {
-			throw new Exception( 'Class ' . $repository_data['class_name'] . ' is not found. Please check if class name is filled out correctly.' );
-		}
-
-		require_once $repository_data['class_path'];
-
-		return new $repository_data['class_name']( $this->plugin );
+		throw new Exception( "Repository {$repository_name} is not supported!" );
 	}
 
 	/**
