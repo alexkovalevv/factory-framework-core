@@ -143,6 +143,20 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
+	 * Устанавливает класс провайдер лицензий в список доступных лицензионных провайдеров
+	 *
+	 * @since  4.1.6
+	 *
+	 * @param string $name         Имя провайдер
+	 * @param string $class_name   Имя класса провайдера
+	 */
+	public function set_license_provider( $name, $class_name ) {
+		if ( ! isset( WBCR\Factory_000\Premium\Manager::$providers[ $name ] ) ) {
+			WBCR\Factory_000\Premium\Manager::$providers[ $name ] = $class_name;
+		}
+	}
+
+	/**
 	 * Устанавливает текстовый домен для плагина. Текстовый домен берется из заголовка входного
 	 * файла плагина.
 	 *
@@ -563,7 +577,7 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
-	 * Создает нового рабочего для проверки обновлений и апгрейда текущего плагина.         *
+	 * Создает нового рабочего для проверки обновлений и апгрейда текущего плагина.
 	 *
 	 * @since 4.1.1
 	 *
@@ -603,31 +617,6 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 			new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
 		}
 	}
-
-	/**
-	 * @since 4.1.1
-	 *
-	 * @param array | string $dependents
-	 *
-	 * @throws Exception
-	 */
-	/*protected function modules_dependent( $dependents ) {
-		$modules = array();
-		
-		if ( is_array( $dependents ) ) {
-			foreach ( $dependents as $module_name ) {
-				if ( ! isset( $this->loaded_factory_modules[ $module_name ] ) ) {
-					$modules[] = $module_name;
-				}
-			}
-		} else if ( ! isset( $this->loaded_factory_modules[ $dependents ] ) ) {
-			$modules[] = $dependents;
-		}
-		
-		if ( ! empty( $modules ) ) {
-			throw new Exception( "Error in factory framework. Your plugin configuration requires include of additional framework modules: " . implode( ',', $modules ) . "." );
-		}
-	}*/
 
 	// ----------------------------------------------------------------------
 	// Public methods

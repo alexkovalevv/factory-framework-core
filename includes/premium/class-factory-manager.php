@@ -11,55 +11,56 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * @author Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
- * @link https://webcraftic.com
+ * @author        Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
+ * @link          https://webcraftic.com
  * @copyright (c) 2018 Webraftic Ltd
- * @version 1.0
+ * @version       1.0
  */
 class Manager {
-	
+
+	/**
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  4.1.6
+	 * @var array
+	 */
+	public static $providers;
+
 	/**
 	 * @var Wbcr_Factory000_Plugin
 	 */
 	protected $plugin;
-	
-	/**
-	 * @var \WBCR\Factory_000\Premium\Provider
-	 */
-	protected $provider;
-	
+
 	/**
 	 * @var array
 	 */
 	protected $settings;
-	
+
 	/**
 	 * Manager constructor.
 	 *
 	 * @param Wbcr_Factory000_Plugin $plugin
-	 * @param array $settings
+	 * @param array                  $settings
 	 *
 	 * @throws Exception
 	 */
 	public function __construct( Wbcr_Factory000_Plugin $plugin, array $settings ) {
 		$this->plugin   = $plugin;
 		$this->settings = $settings;
-		//Plugin_Updates_Manager( $this->plugin, $this->updates['premium'], true );
 	}
-	
+
 	/**
 	 * @param Wbcr_Factory000_Plugin $plugin
-	 * @param array $settings
+	 * @param array                  $settings
 	 *
 	 * @return \WBCR\Factory_Freemius_000\Premium\Provider
 	 * @throws Exception
 	 */
 	public static function instance( Wbcr_Factory000_Plugin $plugin, array $settings ) {
 		$premium_manager = new Manager( $plugin, $settings );
-		
+
 		return $premium_manager->instance_provider();
 	}
-	
+
 	/**
 	 * @param $provider_name
 	 *
@@ -68,20 +69,23 @@ class Manager {
 	 */
 	public function instance_provider() {
 		$provider_name = $this->get_setting( 'provider' );
-		
-		if ( 'freemius' == $provider_name ) {
-			return new \WBCR\Factory_Freemius_000\Premium\Provider( $this->plugin, $this->settings );
-		} else if ( 'codecanyon' == $provider_name ) {
-			//return new \WBCR\Factory_Codecanyon_000\Licensing\Provider( $this->plugin, $this->settings );
-			throw new Exception( 'Codecanyon provider is not supported!' );
-		} else if ( 'templatemonster' == $provider_name ) {
-			//return new \WBCR\Factory_Themplatemonster_000\Licensing\Provider( $this->plugin, $this->settings );
-			throw new Exception( 'Templatemonster provider is not supported!' );
+
+		if ( isset( self::$providers[ $provider_name ] ) ) {
+			if ( self::$providers[ $provider_name ] instanceof Provider ) {
+				throw new Exception( "Provider {$provider_name} must extend the class WBCR\Factory_000\Premium\Provider interface!" );
+			}
+
+			return new self::$providers[ $provider_name ]( $this->plugin, $this->settings );
 		}
-		
+
 		throw new Exception( "Provider {$provider_name} is not supported!" );
 	}
-	
+
+	/**
+	 * @param string $name
+	 *
+	 * @return mixed
+	 */
 	protected function get_setting( $name ) {
 		return isset( $this->settings[ $name ] ) ? $this->settings[ $name ] : null;
 	}
