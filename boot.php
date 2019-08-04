@@ -2,7 +2,7 @@
 /**
  * Factory Plugin
  *
- * @author        Alex Kovalev <alex.kovalevv@gmail.com>
+ * @author        @author        Alex Kovalev <alex.kovalevv@gmail.com>, repo: https://github.com/alexkovalevv
  * @since         1.0.0
  * @package       core
  * @copyright (c) 2018, Webcraftic Ltd
@@ -20,7 +20,7 @@ if ( defined( 'FACTORY_000_LOADED' ) ) {
 
 define( 'FACTORY_000_LOADED', true );
 
-define( 'FACTORY_000_VERSION', '4.1.6' );
+define( 'FACTORY_000_VERSION', '4.1.7' );
 
 define( 'FACTORY_000_DIR', dirname( __FILE__ ) );
 define( 'FACTORY_000_URL', plugins_url( null, __FILE__ ) );

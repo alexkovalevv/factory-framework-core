@@ -23,10 +23,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * todo: get_option and get_site_option are used because some caching plugins caching options, which causes problems
  *
  *
- * @author        Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
+ * @author        Alex Kovalev <alex.kovalevv@gmail.com>, repo: https://github.com/alexkovalevv
+ * @author        Webcraftic <wordpress.webraftic@gmail.com>, site: https://webcraftic.com
+ *
  * @since         4.1.1
- * @copyright (c) 2018 Webraftic Ltd
- * @link          https://webcraftic.com
  */
 class Migrations {
 

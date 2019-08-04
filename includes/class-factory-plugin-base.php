@@ -11,10 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Документация по созданию плагина: https://webcraftic.atlassian.net/wiki/spaces/CNCFC/pages/327828
  * Репозиторий: https://github.com/alexkovalevv
  *
- * @author        Alex Kovalev <alex.kovalevv@gmail.com>
+ * @author        Alex Kovalev <alex.kovalevv@gmail.com>, repo: https://github.com/alexkovalevv
+ * @author        Webcraftic <wordpress.webraftic@gmail.com>, site: https://webcraftic.com
+ *
  * @since         1.0.0
  * @package       factory-core
- * @copyright (c) 2018 Webraftic Ltd
  */
 class  Wbcr_Factory000_Base {
 

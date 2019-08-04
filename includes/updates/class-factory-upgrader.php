@@ -12,8 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * @author        Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
- * @link          https://webcraftic.com
+ * @author        Alex Kovalev <alex.kovalevv@gmail.com>, repo: https://github.com/alexkovalevv
+ * @author        Webcraftic <wordpress.webraftic@gmail.com>, site: https://webcraftic.com
  * @copyright (c) 2018 Webraftic Ltd
  * @version       1.0
  */

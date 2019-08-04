@@ -7,24 +7,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /*
- * @author Webcraftic <wordpress.webraftic@gmail.com>, Alex Kovalev <alex.kovalevv@gmail.com>
- * @link https://webcraftic.com
- * @copyright (c) 2018 Webraftic Ltd
+ * @author        Alex Kovalev <alex.kovalevv@gmail.com>, repo: https://github.com/alexkovalevv
+ * @author        Webcraftic <wordpress.webraftic@gmail.com>, site: https://webcraftic.com
  * @since 4.1.1
  */
 
 class Paths {
-	
+
 	public $absolute;
 	public $main_file;
 	public $relative;
 	public $url;
-	
+
 	protected $plugin_path;
-	
+
 	public function __construct( $plugin_file ) {
 		$this->plugin_path = $plugin_file;
-		
+
 		$this->main_file  = $plugin_file;
 		$this->absolute   = dirname( $plugin_file );
 		$this->basename   = plugin_basename( $plugin_file );
