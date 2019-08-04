@@ -251,24 +251,10 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	 * @param string $file_path    Абсолютный путь к файлу с классом страницы.
 	 *
 	 * @throws Exception
+	 * @deprecated 4.1.7 You cannot use it!
 	 */
 	public function registerType( $class_name, $file_path ) {
-
-		if ( ! file_exists( $file_path ) ) {
-			throw new Exception( 'The page file was not found by the path {' . $file_path . '} you set.' );
-		}
-
-		require_once( $file_path );
-
-		if ( ! class_exists( $class_name ) ) {
-			throw new Exception( 'A class with this name {' . $class_name . '} does not exist.' );
-		}
-
-		if ( ! class_exists( 'Wbcr_FactoryTypes000' ) ) {
-			throw new Exception( 'The factory_types_000 module is not included.' );
-		}
-
-		Wbcr_FactoryTypes000::register( $class_name, $this );
+		throw new Exception( 'As of factory core module 4.1.7, the "registerType" method is deprecated. You cannot use it!' );
 	}
 
 	/**
