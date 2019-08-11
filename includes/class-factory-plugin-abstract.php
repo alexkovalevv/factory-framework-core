@@ -80,6 +80,15 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	private $plugin_addons;
 
 	/**
+	 * The Adverts Manager class
+	 *
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  4.1.9
+	 * @var WBCR\Factory_Adverts_000\Base
+	 */
+	private $adverts;
+
+	/**
 	 * Инициализирует компоненты фреймворка и плагина.
 	 *
 	 * @since 1.0.0
@@ -143,6 +152,18 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
+	 * Устанавливает класс менеджер, которому будет делегирована работа с объявлениями в Wordpress
+	 *
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  4.1.9
+	 */
+	public function set_adverts_manager( $class_name ) {
+		if ( empty( $this->adverts ) && $this->render_adverts ) {
+			$this->adverts = new $class_name( $this, $this->adverts_settings );
+		}
+	}
+
+	/**
 	 * Устанавливает класс провайдера лицензий
 	 *
 	 * С помощью этого класса, мы проверяем валидность лицензий и получаем дополнительную информацию
@@ -177,6 +198,20 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	}
 
 	/**
+	 * Позволяет получить экземпляр менеджера объявления
+	 *
+	 * Доступен глобально через метод app(), чаще всего используется для создания точек для ротации
+	 * рекламных объявлений.
+	 *
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  1.1
+	 * @return \WBCR\Factory_Adverts_000\Base
+	 */
+	public function get_adverts_manager() {
+		return $this->adverts;
+	}
+
+	/**
 	 * Устанавливает текстовый домен для плагина. Текстовый домен берется из заголовка входного
 	 * файла плагина.
 	 *
@@ -185,7 +220,7 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	 * @see   https://codex.wordpress.org/I18n_for_WordPress_Developers
 	 * @see   https://webcraftic.atlassian.net/wiki/spaces/CNCFC/pages/327828 - документация по входному файлу
 	 */
-	public function set_text_domain( $domain ) {
+	public function set_text_domain() {
 		if ( empty( $this->plugin_text_domain ) ) {
 			return;
 		}
