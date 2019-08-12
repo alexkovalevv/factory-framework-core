@@ -20,7 +20,7 @@ if ( defined( 'FACTORY_000_LOADED' ) ) {
 
 define( 'FACTORY_000_LOADED', true );
 
-define( 'FACTORY_000_VERSION', '4.1.9' );
+define( 'FACTORY_000_VERSION', '4.2.0' );
 
 define( 'FACTORY_000_DIR', dirname( __FILE__ ) );
 define( 'FACTORY_000_URL', plugins_url( null, __FILE__ ) );
