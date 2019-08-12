@@ -83,7 +83,18 @@ class Notices {
 	 * хотя бы одно, соответствует условиям в параметре $notice['where'], то метод печает вспомогательные скрипты и уведомления.
 	 */
 	public function currentScreenAction() {
-		$this->notices = apply_filters( 'wbcr_factory_notices_000_list', $this->notices, $this->plugin->getPluginName() );
+		/**
+		 * @since 2.1.2 - является устаревшим
+		 */
+		$this->notices = wbcr_factory_000_apply_filters_deprecated( 'wbcr_factory_notices_000_list', [
+			$this->notices,
+			$this->plugin->getPluginName(),
+		], '2.1.2', 'wbcr/factory/admin_notices' );
+
+		/**
+		 * @since 2.1.2 - Добавлен, модуль factory_notices_000 был удален. Поэтому в этому хуке мы заменили префикс на factory_000
+		 */
+		$this->notices = apply_filters( 'wbcr/factory/admin_notices', $this->notices, $this->plugin->getPluginName() );
 
 		if ( count( $this->notices ) == 0 ) {
 			return;

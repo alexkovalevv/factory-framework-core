@@ -102,7 +102,7 @@ class Premium_Upgrader extends Upgrader {
 			}
 
 			add_action( "admin_print_styles-plugins.php", [ $this, "print_styles_for_plugin_row" ] );
-			add_action( "wbcr_factory_notices_000_list", [ $this, "admin_notices_hook" ], 10, 2 );
+			add_action( "wbcr/factory/admin_notices", [ $this, "admin_notices_hook" ], 10, 2 );
 			add_action( 'wbcr/factory/pages/impressive/print_all_notices', [
 				$this,
 				'install_notice_in_plugin_interface'

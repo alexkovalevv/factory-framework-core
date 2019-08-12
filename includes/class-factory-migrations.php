@@ -52,8 +52,8 @@ class Migrations {
 			add_action( "admin_init", [ $this, "check_migrations" ] );
 
 			add_action( "wbcr/factory/plugin_{$plugin_name}_activated", [ $this, 'activation_hook' ] );
-			add_action( "wbcr_factory_notices_000_list", [ $this, "debug_bar_notice" ], 10, 2 );
-			add_action( "wbcr_factory_notices_000_list", [ $this, "migration_error_notice" ], 10, 2 );
+			add_action( "wbcr/factory/admin_notices", [ $this, "debug_bar_notice" ], 10, 2 );
+			add_action( "wbcr/factory/admin_notices", [ $this, "migration_error_notice" ], 10, 2 );
 		}
 	}
 
