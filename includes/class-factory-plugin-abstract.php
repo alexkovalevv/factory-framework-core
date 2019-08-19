@@ -75,9 +75,11 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 	 * Ассоциативный массив со списком аддонов плагина. Аддоны плагина являются частью одного проекта,
 	 * но не как отдельный плагин.
 	 *
-	 * @var array[] Wbcr_Factory000_Plugin
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  4.2.0
+	 * @var array
 	 */
-	private $plugin_addons;
+	private $loaded_plugin_components = [];
 
 	/**
 	 * The Adverts Manager class
@@ -127,10 +129,10 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 
 		// init actions
 		$this->register_plugin_hooks();
-	}
 
-	/* Services region
-	/* -------------------------------------------------------------*/
+		// INIT PLUGIN COMPONENTS
+		$this->init_plugin_components();
+	}
 
 	/**
 	 * Устанавливает класс менеджер, которому плагин будет делегировать подключение ресурсов (картинок,
@@ -232,6 +234,14 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 		if ( ! load_textdomain( $this->plugin_text_domain, $this->paths->absolute . '/languages/' . $mofile ) ) {
 			load_muplugin_textdomain( $this->plugin_text_domain );
 		}
+	}
+
+	public function newScriptList() {
+		return new Wbcr_Factory000_ScriptList( $this );
+	}
+
+	public function newStyleList() {
+		return new Wbcr_Factory000_StyleList( $this );
 	}
 
 	/**
@@ -495,41 +505,57 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 		return Wbcr_FactoryPages000::getPageUrl( $this, $page_id, $args );
 	}
 
-
 	/**
 	 * Загружает аддоны для плагина, как часть проекта, а не как отдельный плагин
+	 *
+	 * @throws \Exception
 	 */
-	protected function loadAddons( $addons ) {
-		if ( empty( $addons ) ) {
+	private function init_plugin_components() {
+
+		$load_plugin_components = $this->get_load_plugin_components();
+
+		if ( empty( $load_plugin_components ) || ! is_array( $load_plugin_components ) ) {
 			return;
 		}
 
-		foreach ( $addons as $addon_name => $addon_path ) {
-			if ( ! isset( $this->plugin_addons[ $addon_name ] ) ) {
+		foreach ( $load_plugin_components as $component_ID => $component ) {
+			if ( ! isset( $this->loaded_plugin_components[ $component_ID ] ) ) {
 
-				// При подключении аддона, мы объявляем константу, что такой аддон уже загружен
-				// $addon_name индентификатор аддона в вверхнем регистре
-				$const_name = strtoupper( 'LOADING_' . str_replace( '-', '_', $addon_name ) . '_AS_ADDON' );
-
-				if ( ! defined( $const_name ) ) {
-					define( $const_name, true );
+				if ( ! isset( $component['autoload'] ) || ! isset( $component['plugin_prefix'] ) ) {
+					throw new Exception( sprintf( "Component %s cannot be loaded, you must specify the path to the component autoload file and plugin prefix!", $component_ID ) );
 				}
 
-				require_once( $addon_path[1] );
+				$prefix = rtrim( $component['plugin_prefix'], '_' ) . '_';
 
-				// Передаем аддону информацию о родительском плагине
-				$plugin_data = $this->getPluginInfo();
+				if ( defined( $prefix . 'PLUGIN_ACTIVE' ) ) {
+					continue;
+				}
 
-				// Устанавливаем метку для аддона, которая указывает на то, что это аддон
-				$plugin_data['as_addon'] = true;
+				$autoload_file = trailingslashit( $this->get_paths()->absolute ) . $component['autoload'];
 
-				// Передаем класс родителя в аддон, для того,
-				// чтобы аддон использовал экземпляр класса родителя, а не создавал свой собственный.
-				$plugin_data['plugin_parent'] = $this;
+				if ( ! file_exists( $autoload_file ) ) {
+					throw new Exception( sprintf( "Component %s autoload file not found!", $component_ID ) );
+				}
 
-				// Создаем экземпляр класса аддона и записываем его в список загруженных аддонов
-				if ( class_exists( $addon_path[0] ) ) {
-					$this->plugin_addons[ $addon_name ] = new $addon_path[0]( $this->get_paths()->main_file, $plugin_data );
+				require_once( $autoload_file );
+
+				if ( defined( $prefix . 'PLUGIN_ACTIVE' ) && class_exists( $prefix . 'Plugin' ) ) {
+					$this->loaded_plugin_components[ $component_ID ] = [
+						'plugin_dir'     => constant( $prefix . 'PLUGIN_DIR' ),
+						'plugin_url'     => constant( $prefix . 'PLUGIN_URL' ),
+						'plugin_base'    => constant( $prefix . 'PLUGIN_BASE' ),
+						'plugin_version' => constant( $prefix . 'PLUGIN_VERSION' )
+					];
+
+					/**
+					 * Оповещает внешние приложения, что компонент плагина был загружен
+					 *
+					 * @param array  $load_plugin_components   Информация о загруженном компоненте
+					 * @param string $plugin_name              Имя плагина
+					 */
+					do_action( "wbcr/factory/component_{$component_ID}_loaded", $this->loaded_plugin_components[ $component_ID ], $this->getPluginName() );
+				} else {
+					throw new Exception( sprintf( "Сomponent %s does not meet development standards!", $component_ID ) );
 				}
 			}
 		}
@@ -657,18 +683,6 @@ abstract class Wbcr_Factory000_Plugin extends Wbcr_Factory000_Base {
 		if ( isset( $this->license_settings['has_updates'] ) && $this->license_settings['has_updates'] ) {
 			new WBCR\Factory_000\Updates\Premium_Upgrader( $this );
 		}
-	}
-
-	// ----------------------------------------------------------------------
-	// Public methods
-	// ----------------------------------------------------------------------
-
-	public function newScriptList() {
-		return new Wbcr_Factory000_ScriptList( $this );
-	}
-
-	public function newStyleList() {
-		return new Wbcr_Factory000_StyleList( $this );
 	}
 }
 

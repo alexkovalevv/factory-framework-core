@@ -162,8 +162,9 @@ class  Wbcr_Factory000_Base {
 	protected $adverts_settings = [];
 
 	/**
-	 * Обязательное свойство. Подключаемые модули фреймворка. Модули фреймворка позволяют расширять его
-	 * функциональность.
+	 * Обязательное свойство. Подключаемые модули фреймворка.
+	 *
+	 * Модули фреймворка позволяют расширять его функциональность.
 	 *
 	 * @var array {
 	 * Array with information about the loadable module
@@ -180,6 +181,31 @@ class  Wbcr_Factory000_Base {
 		[ 'libs/factory/forms', 'factory_forms_000', 'admin' ],
 		[ 'libs/factory/pages', 'factory_pages_000', 'admin' ],
 	];
+
+	/**
+	 * Не обязательное свойство. Список подключаемых компонентов плагина.
+	 *
+	 * Компоненты плагина, это независимые плагины, которые расширяют возможности текущего плагина.
+	 * Вы должны указать файл для автозагрузки компонента и префикс плагина, чтобы фреймворк
+	 * мог обращаться к классам и константам компонентов.
+	 *
+	 *
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  4.2.0 Добавлен
+	 * @var array Пример данных
+	 *    array(
+	 *       'component_ID' => array(
+	 *         'autoload' => 'relative_path/autoload_filename.php',
+	 *         'plugin_prefix' => 'WPRFX_'
+	 *        ),
+	 *        // Реальный пример
+	 *       'cyrlitera' => array(
+	 *          'autoload' => 'components/cyrlitera/clearfy.php',
+	 *           'plugin_prefix' => 'WCTR_'
+	 *        ),
+	 *    )
+	 */
+	protected $load_plugin_components = [];
 
 
 	/**
@@ -408,6 +434,17 @@ class  Wbcr_Factory000_Base {
 	}
 
 	/**
+	 * Позволяет получить список подключаемых к плагином компонентов
+	 *
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  4.2.0
+	 * @return array
+	 */
+	public function get_load_plugin_components() {
+		return $this->load_plugin_components;
+	}
+
+	/**
 	 * Предоставляет доступ к сырым данным плагина. Может быть полезен, если вы хотите получить
 	 * какие-то данные не описанные в интерфейсе этого плагина.
 	 *
@@ -452,7 +489,26 @@ class  Wbcr_Factory000_Base {
 	}
 
 	/**
-	 * TODO: Вынести метод в функции
+	 * Проверяет права пользователя
+	 *
+	 * @author Alexander Kovalev <alex.kovalevv@gmail.com>
+	 * @since  4.2.0 Добавлен
+	 * @return bool
+	 */
+	public function current_user_can( $capability = 'manage_options' ) {
+		// Просмотр страниц: read_pages
+		// Просмотр уведомлений: read_notices
+		// Редактирование: edit_forms
+
+		if ( 'manage_options' == $capability && is_multisite() && $this->isNetworkActive() ) {
+			$capability = 'manage_network';
+		}
+
+		return current_user_can( $capability );
+	}
+
+	/**
+	 * Проверят, находится ли пользователь в панели усправления сетью сайтов
 	 *
 	 * @since 4.0.8 Добавлен
 	 *
@@ -464,7 +520,6 @@ class  Wbcr_Factory000_Base {
 
 	/**
 	 * Проверяет активирован ли плагин для сети. Если проект работает в режиме мультисайтов..
-	 * TODO: Вынести метод в функции
 	 *
 	 * @since 4.0.8 Добавлен
 	 * @return bool Если true, плагин активирован для сети или в текущий момент активируется для сети.
@@ -486,7 +541,6 @@ class  Wbcr_Factory000_Base {
 
 	/**
 	 * Позволяет получить все активные сайты сети. Если проект работает в режиме мультисайтов.
-	 * TODO: Вынести метод в функции
 	 *
 	 * @since 4.0.8
 	 * @return array|int
