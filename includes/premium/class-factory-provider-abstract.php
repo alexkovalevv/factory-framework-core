@@ -45,9 +45,7 @@ abstract class Provider {
 		$this->plugin   = $plugin;
 		$this->settings = $settings;
 
-		add_action( 'wbcr/factory/license_activate', [ $this, 'register_cron_hooks' ], 10, 2 );
-		add_action( 'wbcr/factory/license_deactivate', [ $this, 'register_cron_hooks' ], 10, 2 );
-		add_action( "{$this->plugin->getPluginName()}_license_autosync", [ $this, 'license_cron_sync' ] );
+		$this->register_hooks();
 	}
 
 	/**
@@ -72,38 +70,6 @@ abstract class Provider {
 	 */
 	public function get_price() {
 		return $this->get_setting( 'price' );
-	}
-
-	/**
-	 * todo: Вынести с лицензионный менеджер
-	 *
-	 * @param array  $license_info
-	 * @param string $plugin_name
-	 */
-	public function register_cron_hooks( $license_info, $plugin_name ) {
-		if ( $this->plugin->getPluginName() == $plugin_name ) {
-			if ( ! wp_next_scheduled( "{$plugin_name}_license_autosync" ) ) {
-				wp_schedule_event( time(), 'twicedaily', "{$plugin_name}_license_autosync" );
-			}
-		}
-	}
-
-	/**
-	 * todo: вынести в лицензионный менеджер
-	 *
-	 * @param array  $license_info
-	 * @param string $plugin_name
-	 */
-	public function clear_cron_hooks( $license_info, $plugin_name ) {
-		if ( $this->plugin->getPluginName() == $plugin_name ) {
-			if ( wp_next_scheduled( "{$plugin_name}_license_autosync" ) ) {
-				wp_clear_scheduled_hook( "{$plugin_name}_license_autosync" );
-			}
-		}
-	}
-
-	public function license_cron_sync() {
-		$this->sync();
 	}
 
 	/**
@@ -173,6 +139,39 @@ abstract class Provider {
 	public function delete_package() {
 		$this->plugin->deletePopulateOption( 'premium_package' );
 		$this->is_install_package = false;
+	}
+
+	protected function register_hooks() {
+		/**
+		 * Добавляет крон задачу на синхронизацию лицензии
+		 *
+		 * @param array  $license_info
+		 * @param string $provider
+		 */
+		add_action( "{$this->plugin->getPluginName()}/factory/premium/license_activate", function ( $provider, $license_info ) {
+			if ( ! wp_next_scheduled( "{$this->plugin->getPluginName()}_license_autosync" ) ) {
+				wp_schedule_event( time(), 'twicedaily', "{$this->plugin->getPluginName()}_license_autosync" );
+			}
+		}, 10, 2 );
+
+		/**
+		 * Удаляет крон задачу на синхронизацию лицензии, когда лицензия деактивирована
+		 *
+		 * @param array  $license_info
+		 * @param string $provider
+		 */
+		add_action( "{$this->plugin->getPluginName()}/factory/premium/license_deactivate", function ( $provider, $license_info ) {
+			if ( wp_next_scheduled( "{$this->plugin->getPluginName()}_license_autosync" ) ) {
+				wp_clear_scheduled_hook( "{$this->plugin->getPluginName()}_license_autosync" );
+			}
+		}, 10, 2 );
+
+		/**
+		 * Обработчик крон задачи на синхронизацию лицензии, выполняется 2 раза в день.
+		 */
+		add_action( "{$this->plugin->getPluginName()}_license_autosync", function () {
+			$this->sync();
+		} );
 	}
 
 	/**
